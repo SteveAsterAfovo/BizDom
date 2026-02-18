@@ -17,12 +17,15 @@
   ::-webkit-scrollbar {
     @apply w-2;
   }
+
   ::-webkit-scrollbar-track {
     @apply bg-dark-900;
   }
+
   ::-webkit-scrollbar-thumb {
     @apply bg-dark-600 rounded-full;
   }
+
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-dark-500;
   }
@@ -30,49 +33,48 @@
 
 /* ── Composants réutilisables ── */
 @layer components {
+
   /* Carte de base */
   .card {
-    @apply bg-dark-800/80 backdrop-blur-sm border border-dark-700/50 rounded-2xl p-5 
-           shadow-card transition-all duration-300;
+    @apply bg-dark-800/80 backdrop-blur-sm border border-dark-700/50 rounded-2xl p-5 shadow-card transition-all duration-300;
   }
+
   .card:hover {
     @apply shadow-card-hover border-dark-600/50;
   }
 
   /* Bouton principal */
   .btn-primary {
-    @apply bg-accent-600 hover:bg-accent-500 text-white font-semibold 
-           px-5 py-2.5 rounded-xl transition-all duration-200 
-           shadow-glow-accent hover:shadow-lg active:scale-[0.97];
+    @apply bg-accent-600 hover:bg-accent-500 text-white font-semibold px-5 py-2.5 rounded-xl transition-all duration-200 shadow-glow-accent hover:shadow-lg active:scale-[0.97];
   }
 
   /* Bouton danger */
   .btn-danger {
-    @apply bg-loss-600/20 hover:bg-loss-600 text-loss-400 hover:text-white 
-           font-semibold px-5 py-2.5 rounded-xl transition-all duration-200 
-           border border-loss-600/30 hover:border-loss-500;
+    @apply bg-loss-600/20 hover:bg-loss-600 text-loss-400 hover:text-white font-semibold px-5 py-2.5 rounded-xl transition-all duration-200 border border-loss-600/30 hover:border-loss-500;
   }
 
   /* Bouton secondaire */
   .btn-secondary {
-    @apply bg-dark-700/50 hover:bg-dark-600/50 text-dark-200 
-           font-medium px-5 py-2.5 rounded-xl transition-all duration-200 
-           border border-dark-600/30;
+    @apply bg-dark-700/50 hover:bg-dark-600/50 text-dark-200 font-medium px-5 py-2.5 rounded-xl transition-all duration-200 border border-dark-600/30;
   }
 
   /* Badge */
   .badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
+
   .badge-gain {
     @apply badge bg-gain-500/20 text-gain-400;
   }
+
   .badge-loss {
     @apply badge bg-loss-500/20 text-loss-400;
   }
+
   .badge-warn {
     @apply badge bg-warn-500/20 text-warn-400;
   }
+
   .badge-accent {
     @apply badge bg-accent-500/20 text-accent-400;
   }
@@ -81,6 +83,7 @@
   .progress-bar {
     @apply w-full h-2 bg-dark-700 rounded-full overflow-hidden;
   }
+
   .progress-fill {
     @apply h-full rounded-full transition-all duration-500 ease-out;
   }
