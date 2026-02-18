@@ -86,8 +86,8 @@ const cycleConfig = computed(() => {
             : 'bg-gradient-to-r from-accent-600 to-accent-500 text-white hover:from-accent-500 hover:to-accent-400 shadow-glow-accent hover:shadow-lg active:scale-[0.97]',
       ]" :disabled="gameStore.isSimulating || gameStore.gameOver" @click="handleNextMonth">
         <span v-if="gameStore.isSimulating" class="animate-spin">⏳</span>
-        <span v-else>⏩</span>
-        {{ gameStore.isSimulating ? 'Simulation...' : gameStore.gameOver ? 'Faillite !' : 'Mois suivant' }}
+        <span v-else>⏭️</span>
+        {{ gameStore.isSimulating ? 'Simulation...' : gameStore.gameOver ? 'Faillite !' : 'Mois Prochain' }}
       </button>
     </div>
   </header>

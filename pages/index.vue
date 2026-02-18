@@ -46,6 +46,9 @@ useHead({
         <!-- En-tête avec bouton simulation -->
         <DashboardHeader />
 
+        <!-- Contrôle du temps réel -->
+        <TimePanel class="mb-6" />
+
         <!-- Banner de sauvegarde -->
         <SaveGameBanner />
 
@@ -102,7 +105,7 @@ useHead({
                                 <p class="text-sm font-semibold text-accent-400">{{ companyStore.company.name }}</p>
                             </div>
                             <p class="text-lg font-bold text-accent-400">{{ companyStore.playerMarketShare.toFixed(1)
-                                }}%</p>
+                            }}%</p>
                         </div>
                         <div class="progress-bar">
                             <div class="progress-fill bg-accent-500"

@@ -3,7 +3,14 @@
  * ── Layout Default ──
  * Layout principal avec sidebar navigable, AchievementToast global
  */
+import { useSimulation } from '~/composables/useSimulation'
+
 const isSidebarOpen = ref(true)
+const { startRealTimeSimulation } = useSimulation()
+
+onMounted(() => {
+  startRealTimeSimulation()
+})
 
 const navLinks = [
   { to: '/', icon: '📊', label: 'Dashboard' },

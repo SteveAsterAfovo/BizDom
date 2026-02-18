@@ -440,6 +440,39 @@ export const useCompanyStore = defineStore('company', {
         },
 
         /** Réinitialiser les données de l'entreprise */
+        /**
+     * Applique un "tick" de simulation (fraction d'un mois)
+     * @param dayFraction La portion de mois écoulée (ex: 1/30)
+     */
+        applyTick(dayFraction: number) {
+            // 1. Mise à jour de la trésorerie (Revenus - Dépenses au prorata)
+            const monthlyRevenue = this.market.customerBase * this.company.revenuePerCustomer * this.getCycleMultiplier()
+            const monthlyExpenses = this.totalSalaries + this.company.fixedCosts + this.currentOffice.rent + this.totalPerkCosts + this.totalLoanPayments
+
+            const tickProfit = (monthlyRevenue - monthlyExpenses) * dayFraction
+            this.company.cash += tickProfit
+
+            // 2. Fatigue granulaire
+            this.employees.forEach(emp => {
+                let fatigueGain = 3 // Base
+                const activePerks = this.availablePerks.filter(p => this.company.activePerks.includes(p.id))
+                const reduction = activePerks.reduce((sum, p) => sum + p.fatigueReduction, 0)
+
+                const finalGain = Math.max(0, (fatigueGain - reduction) * dayFraction)
+                emp.fatigue = Math.min(100, emp.fatigue + finalGain)
+            })
+
+            // 3. Acquisition client granulaire
+            // On ajoute des clients progressivement au lieu d'un bloc
+            const monthlyNew = this.estimatedNewCustomers
+            if (monthlyNew > 0) {
+                // Probabilité d'ajouter un client ce jour là
+                if (Math.random() < (monthlyNew / 30)) {
+                    this.market.customerBase++
+                }
+            }
+        },
+
         resetCompany() {
             this.company = { ...companyData } as Company
             this.employees = employeesData.map((e) => ({ ...e })) as Employee[]

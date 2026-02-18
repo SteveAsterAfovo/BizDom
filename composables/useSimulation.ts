@@ -192,8 +192,51 @@ export function useSimulation() {
         }
     }
 
+    // ── Simulation Temps Réel ──
+    let tickInterval: any = null
+
+    function startRealTimeSimulation() {
+        if (tickInterval) return
+
+        // Un tick toutes les 333ms (environ 1 jour de jeu par seconde si mois = 10s)
+        const tickRate = gameStore.timerDuration / 30
+
+        tickInterval = setInterval(() => {
+            if (gameStore.isPaused || gameStore.gameOver) return
+
+            // On avance d'un jour
+            gameStore.advanceDay()
+
+            // Appliquer le tick financier/fatigue (1/30ème du mois)
+            companyStore.applyTick(1 / 30)
+
+            // Si mois fini
+            if (gameStore.currentDay >= 30) {
+                simulateMonth()
+                gameStore.resetTimer()
+            }
+        }, tickRate / gameStore.gameSpeed)
+    }
+
+    function stopRealTimeSimulation() {
+        if (tickInterval) {
+            clearInterval(tickInterval)
+            tickInterval = null
+        }
+    }
+
+    // Surveiller le changement de vitesse pour redémarrer l'intervalle si besoin
+    watch(() => gameStore.gameSpeed, (newSpeed) => {
+        if (tickInterval) {
+            stopRealTimeSimulation()
+            startRealTimeSimulation()
+        }
+    })
+
     return {
         simulateMonth,
         resetGame,
+        startRealTimeSimulation,
+        stopRealTimeSimulation,
     }
 }

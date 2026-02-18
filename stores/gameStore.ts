@@ -1,7 +1,7 @@
 /**
  * ── Game Store ──
  * Gère l'état global du jeu : mois courant, rapports, événements,
- * achievements, mode sombre/clair
+ * achievements, mode sombre/clair et simulation temps réel
  */
 import { defineStore } from 'pinia'
 import type { GameEvent, MonthlyReport, Achievement } from '~/types'
@@ -9,6 +9,10 @@ import achievementsData from '~/mock/achievements.json'
 
 interface GameStoreState {
     currentMonth: number
+    isPaused: boolean
+    currentDay: number
+    gameSpeed: number
+    timerDuration: number
     reports: MonthlyReport[]
     eventHistory: GameEvent[]
     currentEvent: GameEvent | null
@@ -22,6 +26,10 @@ interface GameStoreState {
 export const useGameStore = defineStore('game', {
     state: (): GameStoreState => ({
         currentMonth: 1,
+        isPaused: true,
+        currentDay: 0,
+        gameSpeed: 1,
+        timerDuration: 10000, // 10s = 1 mois
         reports: [],
         eventHistory: [],
         currentEvent: null,
@@ -69,9 +77,30 @@ export const useGameStore = defineStore('game', {
             if (state.achievements.length === 0) return 0
             return Math.round((state.achievements.filter((a) => a.unlocked).length / state.achievements.length) * 100)
         },
+
+        /** Progression du mois (0-100) */
+        monthProgress: (state): number => (state.currentDay / 30) * 100,
     },
 
     actions: {
+        togglePause() {
+            this.isPaused = !this.isPaused
+        },
+
+        setSpeed(speed: number) {
+            this.gameSpeed = speed
+        },
+
+        advanceDay() {
+            if (this.currentDay < 30) {
+                this.currentDay++
+            }
+        },
+
+        resetTimer() {
+            this.currentDay = 0
+        },
+
         /** Ajouter un rapport mensuel à l'historique */
         addReport(report: MonthlyReport) {
             this.reports.push(report)
@@ -160,6 +189,8 @@ export const useGameStore = defineStore('game', {
         /** Réinitialiser le jeu */
         resetGame() {
             this.currentMonth = 1
+            this.isPaused = true
+            this.currentDay = 0
             this.reports = []
             this.eventHistory = []
             this.currentEvent = null
