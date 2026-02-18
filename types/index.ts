@@ -17,7 +17,46 @@ export interface CEO {
 // ─── Cycles économiques ───
 export type EconomicCycle = 'growth' | 'stable' | 'recession'
 
-/** Bureau / espace de travail */
+// ─── Gouvernance ───
+export type DecisionImpact = 'cash' | 'motivation' | 'reputation' | 'marketShare'
+
+export interface BoardMember {
+    id: number
+    name: string
+    role: string
+    influence: number      // 0 à 1 (poids du vote)
+    satisfaction: number   // 0 à 100
+    personality: 'conservative' | 'aggressive' | 'balanced'
+    icon: string
+}
+
+export interface StrategicDecision {
+    id: string
+    title: string
+    description: string
+    cost: number
+    impacts: Partial<Record<DecisionImpact, number>>
+    risk: number           // 0 à 1 (chance d'échec)
+    boardSupport?: number   // Support requis (0-100) pour être auto-validé
+}
+
+// ─── Infrastructure & Matériel ───
+export type InfrastructureCategory = 'network' | 'power' | 'workstation' | 'software'
+
+export interface InfrastructureItem {
+    id: string
+    name: string
+    category: InfrastructureCategory
+    cost: number
+    monthlyCost: number
+    quality: number        // 1 à 5
+    dependencies: string[] // IDs des items requis
+    description: string
+    risky?: boolean        // Est-ce une proposition dangereuse ?
+    failureRate?: number   // Risque de panne
+}
+
+// ─── Bureaux / espace de travail ───
 export interface Office {
     id: number
     name: string
@@ -95,6 +134,8 @@ export interface Company {
     lastUpgradeMonth: number // mois de la dernière amélioration matériel
     isConfigured: boolean    // l'entreprise est-elle initialisée ?
     ceo?: CEO                // profile du CEO
+    boardSatisfaction: number // 0 à 100
+    ownedInfrastructure: string[] // IDs des items possédés
 }
 
 /** Employé de l'entreprise */

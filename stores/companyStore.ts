@@ -4,7 +4,8 @@
  * bureaux, avantages sociaux, prêts, concurrence et canaux marketing
  */
 import { defineStore } from 'pinia'
-import type { Company, Employee, MarketData, RecruitCandidate, Office, Perk, Loan, Competitor, MarketingChannel, EmployeeSpecialty } from '~/types'
+import type { Company, Employee, MarketData, RecruitCandidate, Office, Perk, Loan, Competitor, MarketingChannel, EmployeeSpecialty, BoardMember, InfrastructureItem, StrategicDecision } from '~/types'
+import infrastructureData from '~/mock/infrastructure.json'
 import companyData from '~/mock/company.json'
 import employeesData from '~/mock/employees.json'
 import marketData from '~/mock/market.json'
@@ -40,6 +41,9 @@ interface CompanyStoreState {
   competitors: Competitor[]
   marketingChannels: MarketingChannel[]
   nextLoanId: number
+  boardMembers: BoardMember[]
+  infrastructureCatalogue: InfrastructureItem[]
+  pendingDecisions: StrategicDecision[]
 }
 
 export const useCompanyStore = defineStore('company', {
@@ -50,6 +54,8 @@ export const useCompanyStore = defineStore('company', {
       equipmentLevel: 1,
       lastUpgradeMonth: 1,
       isConfigured: false,
+      boardSatisfaction: 75,
+      ownedInfrastructure: ['pwr-standard', 'net-4g', 'ws-pc-eco'],
     } as Company,
     employees: employeesData.slice(0, 2).map((e) => ({
       ...e,
@@ -72,6 +78,13 @@ export const useCompanyStore = defineStore('company', {
     competitors: competitorsData.map((c) => ({ ...c })) as Competitor[],
     marketingChannels: channelsData.map((ch) => ({ ...ch })) as MarketingChannel[],
     nextLoanId: 1,
+    boardMembers: [
+      { id: 1, name: 'Jean-Claude Invest', role: 'Investisseur VC', influence: 0.4, satisfaction: 80, personality: 'conservative', icon: '👴' },
+      { id: 2, name: 'Fatou Business', role: 'Business Angel', influence: 0.3, satisfaction: 70, personality: 'balanced', icon: '👩‍💼' },
+      { id: 3, name: 'Marc Innov', role: 'Expert Tech', influence: 0.3, satisfaction: 75, personality: 'aggressive', icon: '🧔' },
+    ],
+    infrastructureCatalogue: infrastructureData as InfrastructureItem[],
+    pendingDecisions: []
   }),
 
   getters: {
@@ -201,6 +214,33 @@ export const useCompanyStore = defineStore('company', {
       const fatigueFactor = Math.max(0, this.averageFatigue - 50) * 2 // Augmente après 50% fatigue
       const perkFactor = Math.max(0, 50 - (this.company.activePerks.length * 15)) // Moins de 3 perks = risque
       return Math.min(100, fatigueFactor + perkFactor)
+    },
+
+    /** Productivité ajustée par l'infrastructure (dépendances) */
+    infrastructureMalus(state: CompanyStoreState): number {
+      let malus = 1
+      state.company.ownedInfrastructure.forEach(itemId => {
+        const item = state.infrastructureCatalogue.find(i => i.id === itemId)
+        if (!item) return
+
+        // Vérifier les dépendances
+        item.dependencies.forEach(depId => {
+          if (!state.company.ownedInfrastructure.includes(depId)) {
+            malus *= 0.85 // -15% par dépendance manquante
+          }
+        })
+      })
+      return malus
+    },
+
+    /** Part détenue par le CEO (1 - investorShare) */
+    ceoShare(state: CompanyStoreState): number {
+      return 1 - state.company.investorShare
+    },
+
+    /** Moyenne de satisfaction du Board */
+    boardSatisfaction(state: CompanyStoreState): number {
+      return Math.round(state.boardMembers.reduce((s, m) => s + m.satisfaction * m.influence, 0))
     }
   },
 
@@ -490,33 +530,47 @@ export const useCompanyStore = defineStore('company', {
       }
     },
 
-    /**
-     * Applique un "tick" de simulation (fraction d'un mois)
-     * @param dayFraction La portion de mois écoulée (ex: 1/3600)
-     */
+    /** Appliquer un "tick" de simulation (fraction d'un mois) */
     applyTick(dayFraction: number) {
-      // 1. Mise à jour de la trésorerie (Revenus - Dépenses au prorata)
       const gameStore = useGameStore()
       const cycleMult = this.getCycleMultiplier()
 
-      // Obsolescence : -10% productivité par mois de retard (1 heure réelle = 1 mois)
+      // Obsolescence & Infrastructure malus
       const monthsSinceUpgrade = gameStore.currentMonth - this.company.lastUpgradeMonth
       const obsolescenceMalus = Math.max(0.5, 1 - (monthsSinceUpgrade * 0.1))
+      const infraMalus = this.infrastructureMalus
 
       const monthlyRevenue = this.market.customerBase
         * this.company.revenuePerCustomer
         * cycleMult
         * this.productivity
         * obsolescenceMalus
+        * infraMalus
 
-      // Part investisseurs
+      // Part investisseurs (Calculé sur le CA avant tout)
       const investorShare = monthlyRevenue * this.company.investorShare
       const companyRevenue = monthlyRevenue - investorShare
 
-      const monthlyExpenses = this.totalSalaries + this.company.fixedCosts + this.currentOffice.rent + this.totalPerkCosts + this.totalLoanPayments
+      // Coûts fixes infra
+      const monthlyInfraCosts = this.company.ownedInfrastructure.reduce((sum: number, id: string) => {
+        const item = this.infrastructureCatalogue.find(i => i.id === id)
+        return sum + (item?.monthlyCost || 0)
+      }, 0)
+
+      const monthlyExpenses = this.totalSalaries
+        + this.company.fixedCosts
+        + this.currentOffice.rent
+        + this.totalPerkCosts
+        + this.totalLoanPayments
+        + monthlyInfraCosts
 
       const tickProfit = (companyRevenue - monthlyExpenses) * dayFraction
       this.company.cash += tickProfit
+
+      // Si cash est négatif, le Board perd 1 point de satisfaction par seconde
+      if (this.company.cash < 0) {
+        this.boardMembers.forEach(m => m.satisfaction = Math.max(0, m.satisfaction - 0.1))
+      }
 
       // 2. Gestion HR Hardcore : Grèves & Rebellion
       const strikeRisk = this.strikeRisk / 100 // 0.0 to 1.0
@@ -602,6 +656,58 @@ export const useCompanyStore = defineStore('company', {
       }
     },
 
+    /** Acheter une infrastructure / équipement */
+    purchaseInfrastructure(itemId: string) {
+      const item = this.infrastructureCatalogue.find(i => i.id === itemId)
+      if (!item || this.company.ownedInfrastructure.includes(itemId)) return
+
+      if (this.company.cash >= item.cost) {
+        this.company.cash -= item.cost
+        this.company.ownedInfrastructure.push(itemId)
+
+        // Risque de panne immédiate si item risqué
+        if (item.risky && Math.random() < (item.failureRate || 0)) {
+          const gameStore = useGameStore()
+          gameStore.triggerEvent({
+            id: 110,
+            name: "Panne Infrastructure",
+            description: `Le matériel ${item.name} vient de griller. Installation défectueuse !`,
+            type: "loss",
+            impactValue: item.cost * 0.5,
+            icon: "💥",
+            probability: 1
+          })
+          // On retire l'item s'il est mort
+          this.company.ownedInfrastructure = this.company.ownedInfrastructure.filter(id => id !== itemId)
+        }
+      }
+    },
+
+    /** Soumettre une décision au Board */
+    submitStrategicDecision(decision: StrategicDecision) {
+      // Calculer l'accord du Board (Moyenne pondérée influence * satisfaction)
+      const approvalScore = this.boardMembers.reduce((sum: number, m: BoardMember) => {
+        let score = m.satisfaction
+        if (decision.risk > 0.5 && m.personality === 'conservative') score -= 20
+        if (decision.risk > 0.5 && m.personality === 'aggressive') score += 10
+        return sum + (score * m.influence)
+      }, 0)
+
+      if (approvalScore >= (decision.boardSupport || 50)) {
+        // Appliquer impacts
+        if (decision.impacts.cash) this.updateCash(decision.impacts.cash)
+        if (decision.impacts.marketShare) {
+          // Logique de part de marché simplifiée
+        }
+        this.boardMembers.forEach(m => m.satisfaction = Math.min(100, m.satisfaction + 5))
+        return true
+      } else {
+        // Rejet
+        this.boardMembers.forEach(m => m.satisfaction = Math.max(0, m.satisfaction - 10))
+        return false
+      }
+    },
+
     resetCompany() {
       this.company = {
         ...companyData,
@@ -609,6 +715,8 @@ export const useCompanyStore = defineStore('company', {
         equipmentLevel: 1,
         lastUpgradeMonth: 1,
         isConfigured: false,
+        boardSatisfaction: 75,
+        ownedInfrastructure: ['pwr-standard', 'net-4g', 'ws-pc-eco']
       } as Company
       this.employees = employeesData.slice(0, 2).map((e) => ({
         ...e,
@@ -631,6 +739,12 @@ export const useCompanyStore = defineStore('company', {
       this.competitors = competitorsData.map((c) => ({ ...c })) as Competitor[]
       this.marketingChannels = channelsData.map((ch) => ({ ...ch })) as MarketingChannel[]
       this.nextLoanId = 1
+      this.boardMembers = [
+        { id: 1, name: 'Jean-Claude Invest', role: 'Investisseur VC', influence: 0.4, satisfaction: 80, personality: 'conservative', icon: '👴' },
+        { id: 2, name: 'Fatou Business', role: 'Business Angel', influence: 0.3, satisfaction: 70, personality: 'balanced', icon: '👩‍💼' },
+        { id: 3, name: 'Marc Innov', role: 'Expert Tech', influence: 0.3, satisfaction: 75, personality: 'aggressive', icon: '🧔' },
+      ]
+      this.company.ownedInfrastructure = ['pwr-standard', 'net-4g', 'ws-pc-eco']
     },
 
     /** Envoyer un employé en formation (3 jours) */
@@ -658,8 +772,10 @@ export const useCompanyStore = defineStore('company', {
 
     /** Lever des fonds (100k contre 5% d'equity) */
     raiseFunds() {
+      const gameStore = useGameStore()
+
+      // Blocage Social
       if (this.strikeRisk > 40) {
-        const gameStore = useGameStore()
         gameStore.triggerEvent({
           id: 98,
           name: "Investissement Refusé",
@@ -671,10 +787,42 @@ export const useCompanyStore = defineStore('company', {
         })
         return
       }
+
+      // Blocage Gouvernance
+      if (this.boardSatisfaction < 50) {
+        gameStore.triggerEvent({
+          id: 111,
+          name: "Board en Colère",
+          description: "Le Conseil refuse de diluer le capital tant que les résultats ne s'améliorent pas.",
+          type: "loss",
+          impactValue: 0,
+          icon: "😤",
+          probability: 1
+        })
+        return
+      }
+
       const amount = 100000
       const share = 0.05
       this.company.cash += amount
       this.company.investorShare += share
+
+      // Impact sur le board : soulagement ou méfiance
+      this.boardMembers.forEach(m => {
+        m.satisfaction = Math.min(100, m.satisfaction + 10)
+        // Mais dilution = perte de contrôle
+        m.influence *= 0.95
+      })
+
+      gameStore.triggerEvent({
+        id: 112,
+        name: "Levée de fonds réussie",
+        description: `100k FCFA injectés. Dilution de 5%. Le Board est rassuré sur le cash.`,
+        type: "gain",
+        impactValue: amount,
+        icon: "💰",
+        probability: 1
+      })
     },
 
     /** Générer un avis d'employé */

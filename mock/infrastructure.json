@@ -1,0 +1,93 @@
+[
+  {
+    "id": "net-4g",
+    "name": "Box 4G Standard",
+    "category": "network",
+    "cost": 500,
+    "monthlyCost": 50,
+    "quality": 1,
+    "dependencies": [],
+    "description": "Le strict minimum pour envoyer des emails."
+  },
+  {
+    "id": "net-fiber",
+    "name": "Fibre Optique Pro",
+    "category": "network",
+    "cost": 5000,
+    "monthlyCost": 200,
+    "quality": 4,
+    "dependencies": [],
+    "description": "Connexion stable et rapide pour toute l'équipe."
+  },
+  {
+    "id": "pwr-standard",
+    "name": "Installation Électrique de Base",
+    "category": "power",
+    "cost": 0,
+    "monthlyCost": 100,
+    "quality": 1,
+    "dependencies": [],
+    "description": "L'électricité du bâtiment, sans protection."
+  },
+  {
+    "id": "pwr-ups",
+    "name": "Onduleur Haute Performance",
+    "category": "power",
+    "cost": 2500,
+    "monthlyCost": 20,
+    "quality": 3,
+    "dependencies": [
+      "pwr-standard"
+    ],
+    "description": "Protège vos serveurs des coupures de courant."
+  },
+  {
+    "id": "ws-pc-eco",
+    "name": "PC Bureautique Reconditionné",
+    "category": "workstation",
+    "cost": 600,
+    "monthlyCost": 0,
+    "quality": 1,
+    "dependencies": [
+      "pwr-standard"
+    ],
+    "description": "Ça rame un peu sur Chrome, mais ça tourne."
+  },
+  {
+    "id": "ws-macbook",
+    "name": "MacBook Pro M3 Max",
+    "category": "workstation",
+    "cost": 3500,
+    "monthlyCost": 0,
+    "quality": 5,
+    "dependencies": [
+      "pwr-ups",
+      "net-fiber"
+    ],
+    "description": "La Rolls des développeurs. Nécessite une infra solide."
+  },
+  {
+    "id": "sw-cloud",
+    "name": "Suite Cloud Collaborative",
+    "category": "software",
+    "cost": 0,
+    "monthlyCost": 150,
+    "quality": 3,
+    "dependencies": [
+      "net-fiber"
+    ],
+    "description": "Outils de gestion et de dev en ligne."
+  },
+  {
+    "id": "sw-legacy-os",
+    "name": "OS Licence 'Pirate Edition'",
+    "category": "software",
+    "cost": 100,
+    "monthlyCost": 0,
+    "quality": 2,
+    "dependencies": [],
+    "risky": true,
+    "failureRate": 0.15,
+    "description": "Pas cher, mais attention aux malwares et crashs système."
+  }
+]
