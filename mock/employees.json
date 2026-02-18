@@ -1,0 +1,42 @@
+[
+    {
+        "id": 1,
+        "name": "Aminata Diallo",
+        "role": "Développeur Web",
+        "skillLevel": 4,
+        "salary": 8000,
+        "motivation": 85
+    },
+    {
+        "id": 2,
+        "name": "Kofi Mensah",
+        "role": "Designer UX",
+        "skillLevel": 3,
+        "salary": 6500,
+        "motivation": 70
+    },
+    {
+        "id": 3,
+        "name": "Fatou Sow",
+        "role": "Chef de Projet",
+        "skillLevel": 5,
+        "salary": 12000,
+        "motivation": 90
+    },
+    {
+        "id": 4,
+        "name": "Moussa Traoré",
+        "role": "Commercial",
+        "skillLevel": 3,
+        "salary": 5500,
+        "motivation": 60
+    },
+    {
+        "id": 5,
+        "name": "Aya Koné",
+        "role": "Comptable",
+        "skillLevel": 4,
+        "salary": 7000,
+        "motivation": 75
+    }
+]

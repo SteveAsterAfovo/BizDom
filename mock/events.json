@@ -1,0 +1,92 @@
+[
+    {
+        "id": 1,
+        "name": "Contrat gouvernemental",
+        "description": "Le gouvernement vous attribue un contrat juteux pour un projet de digitalisation.",
+        "probability": 0.1,
+        "type": "gain",
+        "impactValue": 25000,
+        "icon": "🏛️"
+    },
+    {
+        "id": 2,
+        "name": "Panne serveur",
+        "description": "Vos serveurs principaux sont tombés en panne. Réparation urgente nécessaire.",
+        "probability": 0.15,
+        "type": "loss",
+        "impactValue": 8000,
+        "icon": "💥"
+    },
+    {
+        "id": 3,
+        "name": "Employé démissionnaire",
+        "description": "Un de vos employés a reçu une offre d'un concurrent et quitte l'entreprise.",
+        "probability": 0.12,
+        "type": "employee_departure",
+        "impactValue": 0,
+        "icon": "👋"
+    },
+    {
+        "id": 4,
+        "name": "Buzz sur les réseaux",
+        "description": "Votre entreprise devient virale sur les réseaux sociaux ! Afflux de nouveaux clients.",
+        "probability": 0.08,
+        "type": "boost",
+        "impactValue": 30,
+        "icon": "📱"
+    },
+    {
+        "id": 5,
+        "name": "Audit fiscal",
+        "description": "Le fisc débarque pour un contrôle surprise. Amende pour irrégularités mineures.",
+        "probability": 0.1,
+        "type": "loss",
+        "impactValue": 12000,
+        "icon": "📋"
+    },
+    {
+        "id": 6,
+        "name": "Partenariat stratégique",
+        "description": "Une grande entreprise vous propose un partenariat lucratif.",
+        "probability": 0.07,
+        "type": "gain",
+        "impactValue": 18000,
+        "icon": "🤝"
+    },
+    {
+        "id": 7,
+        "name": "Cyberattaque",
+        "description": "Des hackers ciblent votre système. Coûts de sécurisation et récupération.",
+        "probability": 0.08,
+        "type": "loss",
+        "impactValue": 15000,
+        "icon": "🔒"
+    },
+    {
+        "id": 8,
+        "name": "Formation gratuite",
+        "description": "Un organisme offre une formation gratuite à vos employés. Boost de compétences !",
+        "probability": 0.1,
+        "type": "boost",
+        "impactValue": 1,
+        "icon": "🎓"
+    },
+    {
+        "id": 9,
+        "name": "Grève générale",
+        "description": "Une grève paralyse votre secteur. Perte de productivité ce mois-ci.",
+        "probability": 0.06,
+        "type": "loss",
+        "impactValue": 10000,
+        "icon": "✊"
+    },
+    {
+        "id": 10,
+        "name": "Client premium",
+        "description": "Un client premium signe un contrat longue durée avec votre entreprise.",
+        "probability": 0.09,
+        "type": "gain",
+        "impactValue": 20000,
+        "icon": "💎"
+    }
+]

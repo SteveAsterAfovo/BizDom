@@ -1,0 +1,6 @@
+{
+    "customerBase": 50,
+    "acquisitionCoefficient": 0.005,
+    "marketGrowth": 0.02,
+    "inflation": 0.01
+}
