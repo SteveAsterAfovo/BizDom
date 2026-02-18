@@ -6,6 +6,14 @@
 // ─── Spécialités des employés ───
 export type EmployeeSpecialty = 'tech' | 'sales' | 'creative' | 'hr' | 'management'
 
+// ─── CEO / Fondateur ───
+export interface CEO {
+    firstName: string
+    lastName: string
+    gender: 'M' | 'F' | 'NB'
+    appearance: string // Slug ou ID d'avatar
+}
+
 // ─── Cycles économiques ───
 export type EconomicCycle = 'growth' | 'stable' | 'recession'
 
@@ -85,6 +93,8 @@ export interface Company {
     investorShare: number    // part détenue par les investisseurs (0 à 1)
     equipmentLevel: number   // niveau d'équipement (réduit fatigue)
     lastUpgradeMonth: number // mois de la dernière amélioration matériel
+    isConfigured: boolean    // l'entreprise est-elle initialisée ?
+    ceo?: CEO                // profile du CEO
 }
 
 /** Employé de l'entreprise */

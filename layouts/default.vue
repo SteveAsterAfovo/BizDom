@@ -4,9 +4,23 @@
  * Layout principal avec sidebar navigable, AchievementToast global
  */
 import { useSimulation } from '~/composables/useSimulation'
+import { useCompanyStore } from '~/stores/companyStore'
 
 const isSidebarOpen = ref(true)
 const { startRealTimeSimulation } = useSimulation()
+const companyStore = useCompanyStore()
+
+const avatars = [
+  { id: 'casual-1', icon: '👦' },
+  { id: 'casual-2', icon: '👧' },
+  { id: 'suit-1', icon: '👔' },
+  { id: 'suit-2', icon: '👩‍💼' },
+  { id: 'cyber', icon: '👨‍💻' },
+]
+
+function getCEOIcon(id?: string) {
+  return avatars.find(a => a.id === id)?.icon || '👤'
+}
 
 onMounted(() => {
   startRealTimeSimulation()
@@ -59,9 +73,27 @@ const navLinks = [
         </NuxtLink>
       </nav>
 
+      <!-- CEO Profile / Stats -->
+      <div v-if="companyStore.company.isConfigured" class="mt-auto p-4 border-t border-dark-800/50 bg-dark-950/20">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 rounded-xl bg-accent-600/20 border border-accent-500/30 flex items-center justify-center text-xl shadow-glow-accent/5">
+            {{ getCEOIcon(companyStore.company.ceo?.appearance) }}
+          </div>
+          <Transition name="fade">
+            <div v-if="isSidebarOpen" class="overflow-hidden">
+              <p class="text-xs font-black text-white truncate italic">{{ companyStore.company.ceo?.firstName }} {{
+                companyStore.company.ceo?.lastName }}</p>
+              <p class="text-[9px] text-accent-500 font-bold uppercase truncate tracking-widest">{{
+                companyStore.company.name }}</p>
+            </div>
+          </Transition>
+        </div>
+      </div>
+
       <div v-if="isSidebarOpen" class="p-4 border-t border-dark-800/50 text-center">
-        <p class="text-[10px] text-accent-500 font-black uppercase tracking-[0.2em]">BIZDOM v4.0</p>
-        <p class="text-[8px] text-dark-600 mt-1 uppercase font-bold">Strategic Edition</p>
+        <p class="text-[10px] text-accent-500 font-black uppercase tracking-[0.2em]">BIZDOM v6.0</p>
+        <p class="text-[8px] text-dark-600 mt-1 uppercase font-bold">Inception Edition</p>
       </div>
     </aside>
 

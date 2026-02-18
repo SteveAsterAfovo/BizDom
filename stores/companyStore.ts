@@ -49,8 +49,9 @@ export const useCompanyStore = defineStore('company', {
       investorShare: 0,
       equipmentLevel: 1,
       lastUpgradeMonth: 1,
+      isConfigured: false,
     } as Company,
-    employees: employeesData.map((e) => ({
+    employees: employeesData.slice(0, 2).map((e) => ({
       ...e,
       trainingDaysRemaining: 0,
       opinions: [],
@@ -607,8 +608,9 @@ export const useCompanyStore = defineStore('company', {
         investorShare: 0,
         equipmentLevel: 1,
         lastUpgradeMonth: 1,
+        isConfigured: false,
       } as Company
-      this.employees = employeesData.map((e) => ({
+      this.employees = employeesData.slice(0, 2).map((e) => ({
         ...e,
         trainingDaysRemaining: 0,
         opinions: [],
