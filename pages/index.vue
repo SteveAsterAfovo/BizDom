@@ -57,7 +57,7 @@ useHead({
             <FinancialCard title="Trésorerie" :value="formatCurrency(companyStore.cash)" icon="💰"
                 :trend="companyStore.cash >= 100000 ? 'up' : companyStore.cash > 0 ? 'neutral' : 'down'" />
             <FinancialCard title="Profit du mois" :value="lastProfit" icon="📊" :trend="profitTrend"
-                :subtitle="gameStore.lastReport ? `Mois ${gameStore.lastReport.month}` : 'Aucun rapport'" />
+                :subtitle="companyStore.company.investorShare > 0 ? `Equity : ${((1 - companyStore.company.investorShare) * 100).toFixed(0)}%` : (gameStore.lastReport ? `Mois ${gameStore.lastReport.month}` : 'Aucun rapport')" />
             <FinancialCard title="Employés"
                 :value="`${companyStore.employeeCount}/${companyStore.currentOffice.maxEmployees}`" icon="👥"
                 trend="neutral" :subtitle="`Productivité : ${(companyStore.productivity * 100).toFixed(0)}%`" />
@@ -77,12 +77,17 @@ useHead({
             ]" />
         </div>
 
-        <!-- ── Gestion : Marketing + Bureau + Banque ── -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
-            <MarketingPanel />
-            <OfficePanel />
-            <LoanPanel />
+        <!-- ── Gestion : Marketing + Bureau + Banque + Management ── -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+            <div class="grid grid-cols-1 gap-4">
+                <MarketingPanel />
+                <OfficePanel />
+                <LoanPanel />
+            </div>
+            <ManagementPanel />
         </div>
+
+        <QuestLog />
 
         <!-- ── Concurrence & Satisfaction ── -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">

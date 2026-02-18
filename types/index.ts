@@ -82,6 +82,8 @@ export interface Company {
     variableCostPerEmployee: number
     currentOfficeId: number
     activePerks: number[]    // IDs des perks activés
+    investorShare: number    // part détenue par les investisseurs (0 à 1)
+    equipmentLevel: number   // niveau d'équipement (réduit fatigue)
 }
 
 /** Employé de l'entreprise */
@@ -95,6 +97,7 @@ export interface Employee {
     fatigue: number           // 0 à 100 (0 = reposé, 100 = burn-out)
     monthsEmployed: number    // ancienneté en mois
     specialty: EmployeeSpecialty
+    trainingDaysRemaining: number // jours restants de formation (0 = dispo)
 }
 
 /** Données du marché */
@@ -165,4 +168,16 @@ export interface RecruitCandidate {
     fatigue: number
     monthsEmployed: number
     specialty: EmployeeSpecialty
+}
+
+/** Quête / Objectif temporaire */
+export interface Quest {
+    id: string
+    title: string
+    description: string
+    condition: string
+    rewardValue: number
+    rewardType: 'cash' | 'motivation' | 'perk'
+    completed: boolean
+    deadline?: number // Jour de fin
 }
