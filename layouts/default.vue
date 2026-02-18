@@ -14,7 +14,11 @@ onMounted(() => {
 
 const navLinks = [
   { to: '/', icon: '📊', label: 'Dashboard' },
+  { to: '/dg', icon: '🏛️', label: 'Hub DG' },
   { to: '/employees', icon: '👥', label: 'Employés' },
+  { to: '/management/equipment', icon: '🖥️', label: 'Équipement' },
+  { to: '/management/equity', icon: '💰', label: 'Finance' },
+  { to: '/management/quests', icon: '🎯', label: 'Quêtes' },
   { to: '/reports', icon: '📋', label: 'Rapports' },
   { to: '/achievements', icon: '🏆', label: 'Succès' },
 ]
@@ -55,9 +59,9 @@ const navLinks = [
         </NuxtLink>
       </nav>
 
-      <!-- Footer sidebar -->
-      <div v-if="isSidebarOpen" class="p-4 border-t border-dark-800/50">
-        <p class="text-xs text-dark-600 text-center">BIZDOM v2.0</p>
+      <div v-if="isSidebarOpen" class="p-4 border-t border-dark-800/50 text-center">
+        <p class="text-[10px] text-accent-500 font-black uppercase tracking-[0.2em]">BIZDOM v4.0</p>
+        <p class="text-[8px] text-dark-600 mt-1 uppercase font-bold">Strategic Edition</p>
       </div>
     </aside>
 
@@ -69,6 +73,7 @@ const navLinks = [
     <!-- ── Composants globaux ── -->
     <EventModal />
     <AchievementToast />
+    <QuestLog />
   </div>
 </template>
 

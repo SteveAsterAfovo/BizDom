@@ -29,7 +29,7 @@ export const useGameStore = defineStore('game', {
     isPaused: true,
     currentDay: 0,
     gameSpeed: 1,
-    timerDuration: 600000, // 10 minutes = 1 mois
+    timerDuration: 3600000, // 1 heure = 1 mois
     reports: [],
     eventHistory: [],
     currentEvent: null,

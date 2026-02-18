@@ -4,7 +4,7 @@
  * bureaux, avantages sociaux, prêts, concurrence et canaux marketing
  */
 import { defineStore } from 'pinia'
-import type { Company, Employee, MarketData, RecruitCandidate, Office, Perk, Loan, Competitor, MarketingChannel } from '~/types'
+import type { Company, Employee, MarketData, RecruitCandidate, Office, Perk, Loan, Competitor, MarketingChannel, EmployeeSpecialty } from '~/types'
 import companyData from '~/mock/company.json'
 import employeesData from '~/mock/employees.json'
 import marketData from '~/mock/market.json'
@@ -49,8 +49,11 @@ export const useCompanyStore = defineStore('company', {
       investorShare: 0,
       equipmentLevel: 1,
     } as Company,
-    employees: employeesData.map((e) => ({ ...e, trainingDaysRemaining: 0 })) as Employee[],
-    market: { ...marketData } as MarketData,
+    employees: employeesData.map((e) => ({ ...e, trainingDaysRemaining: 0, opinions: [] })) as Employee[],
+    market: {
+      ...marketData,
+      demands: { tech: 50, sales: 50, creative: 50, hr: 50, management: 50 }
+    } as MarketData,
     marketingBudget: 5000,
     recruitPool: RECRUIT_POOL.map((c) => ({ ...c })),
     offices: officesData.map((o) => ({ ...o })) as Office[],
@@ -204,6 +207,7 @@ export const useCompanyStore = defineStore('company', {
         monthsEmployed: 0,
         specialty: candidate.specialty,
         trainingDaysRemaining: 0,
+        opinions: [],
       })
     },
 
@@ -442,7 +446,20 @@ export const useCompanyStore = defineStore('company', {
           this.market.economicCycle = 'recession'
         }
         this.market.cycleMonthsRemaining = Math.floor(Math.random() * 6 + 6) // 6 à 12 mois
+
+        // Mettre à jour les demandes du marché
+        this.updateMarketDemands()
       }
+    },
+
+    /** Mettre à jour les besoins du marché */
+    updateMarketDemands() {
+      const specialties: EmployeeSpecialty[] = ['tech', 'sales', 'creative', 'hr', 'management']
+      specialties.forEach(s => {
+        if (this.market.demands) {
+          this.market.demands[s] = Math.floor(Math.random() * 101)
+        }
+      })
     },
 
     /** Obtenir le multiplicateur du cycle économique */
@@ -486,6 +503,11 @@ export const useCompanyStore = defineStore('company', {
         const finalGain = Math.max(0, (fatigueGain - reduction) * dayFraction)
         emp.fatigue = Math.min(100, emp.fatigue + finalGain)
 
+        // Feedback aléatoire (1% de chance par seconde)
+        if (Math.random() < 0.01) {
+          this.generateEmployeeFeedback(emp.id)
+        }
+
         // 3. Gestion de la formation
         if (emp.trainingDaysRemaining > 0) {
           // On réduit le temps restant (0.1 jour par tick environ si 30 jours/mois)
@@ -514,8 +536,11 @@ export const useCompanyStore = defineStore('company', {
         investorShare: 0,
         equipmentLevel: 1,
       } as Company
-      this.employees = employeesData.map((e) => ({ ...e, trainingDaysRemaining: 0 })) as Employee[]
-      this.market = { ...marketData } as MarketData
+      this.employees = employeesData.map((e) => ({ ...e, trainingDaysRemaining: 0, opinions: [] })) as Employee[]
+      this.market = {
+        ...marketData,
+        demands: { tech: 50, sales: 50, creative: 50, hr: 50, management: 50 }
+      } as MarketData
       this.marketingBudget = 5000
       this.recruitPool = RECRUIT_POOL.map((c) => ({ ...c }))
       this.offices = officesData.map((o) => ({ ...o })) as Office[]
@@ -554,5 +579,33 @@ export const useCompanyStore = defineStore('company', {
       this.company.cash += amount
       this.company.investorShare += share
     },
+
+    /** Générer un avis d'employé */
+    generateEmployeeFeedback(employeeId: number) {
+      const emp = this.employees.find(e => e.id === employeeId)
+      if (!emp) return
+
+      const feedbacks = {
+        high_fatigue: ["Je suis à bout de nerfs...", "On travaille trop ici.", "Besoin de repos..."],
+        low_motivation: ["À quoi bon tout ça ?", "L'ambiance est morose.", "Je vais peut-être chercher ailleurs."],
+        high_motivation: ["J'adore ce projet !", "On va conquérir le monde.", "Fier d'être dans l'équipe."],
+        perks: ["Merci pour les avantages !", "Le café est super.", "Les bureaux sont cools."],
+        training: ["Cette formation m'a ouvert les yeux.", "Je me sens plus fort !"],
+        neutral: ["Journée normale au bureau.", "Tout roule.", "Concentré sur mes tâches."]
+      }
+
+      let category: keyof typeof feedbacks = 'neutral'
+      if (emp.fatigue > 70) category = 'high_fatigue'
+      else if (emp.motivation < 30) category = 'low_motivation'
+      else if (emp.motivation > 85) category = 'high_motivation'
+      else if (this.company.activePerks.length > 2 && Math.random() < 0.3) category = 'perks'
+      else if (emp.trainingDaysRemaining > 0) category = 'training'
+
+      const msg = feedbacks[category][Math.floor(Math.random() * feedbacks[category].length)]
+
+      if (!emp.opinions) emp.opinions = []
+      emp.opinions.unshift(`[J${Math.floor(Date.now() / 1000) % 30}] ${msg}`)
+      if (emp.opinions.length > 5) emp.opinions.pop()
+    }
   },
 })

@@ -98,6 +98,7 @@ export interface Employee {
     monthsEmployed: number    // ancienneté en mois
     specialty: EmployeeSpecialty
     trainingDaysRemaining: number // jours restants de formation (0 = dispo)
+    opinions: string[]            // avis/feedback récents
 }
 
 /** Données du marché */
@@ -110,6 +111,7 @@ export interface MarketData {
     churnRate: number         // taux de perte de clients (0 à 1)
     economicCycle: EconomicCycle
     cycleMonthsRemaining: number // mois avant changement de cycle
+    demands: Record<EmployeeSpecialty, number> // index de besoin par spécialité (0-100)
 }
 
 /** Événement aléatoire du jeu */

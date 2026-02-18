@@ -198,17 +198,25 @@ export function useSimulation() {
   function startRealTimeSimulation() {
     if (tickInterval) return
 
-    // Un tick toutes les 333ms (environ 1 jour de jeu par seconde si mois = 10s)
-    const tickRate = gameStore.timerDuration / 30
+    // Un tick toutes les secondes pour une fluidité totale sur une heure
+    const tickRate = 1000
 
     tickInterval = setInterval(() => {
       if (gameStore.isPaused || gameStore.gameOver) return
 
-      // On avance d'un jour
-      gameStore.advanceDay()
+      // On avance d'une fraction de jour (1h = 30j, donc 1s = 30/3600 j = 1/120 j)
+      // Mais pour rester simple, on va garder applyTick avec la fraction de MOIS écoulée par seconde.
+      // 1 mois = 3600 secondes. Donc 1 seconde = 1/3600 mois.
 
-      // Appliquer le tick financier/fatigue (1/30ème du mois)
-      companyStore.applyTick(1 / 30)
+      // Appliquer le tick financier/fatigue (1/3600ème du mois)
+      companyStore.applyTick(1 / 3600)
+
+      // On avance le jour dans le store toutes les 120 secondes (3600 / 30)
+      const secondsInMonth = gameStore.currentDay * 120
+      // Note: C'est juste visuel
+      if (Math.random() < (1 / 120)) {
+        gameStore.advanceDay()
+      }
 
       // Vérifier les quêtes
       questStore.checkQuests()

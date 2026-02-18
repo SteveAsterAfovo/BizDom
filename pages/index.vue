@@ -77,17 +77,35 @@ useHead({
             ]" />
         </div>
 
-        <!-- ── Gestion : Marketing + Bureau + Banque + Management ── -->
+        <!-- ── BANNIERE DIRECTEUR GENERAL ── -->
+        <NuxtLink to="/dg" class="block mb-8 group">
+            <div
+                class="p-6 rounded-3xl bg-gradient-to-r from-accent-600/20 via-dark-800 to-dark-900 border border-accent-500/30 flex items-center justify-between hover:border-accent-500/60 transition-all shadow-glow-accent/5">
+                <div class="flex items-center gap-6">
+                    <div
+                        class="w-16 h-16 rounded-2xl bg-accent-600/20 flex items-center justify-center text-3xl shadow-glow-accent/20 group-hover:scale-110 transition-transform">
+                        🏛️
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-black text-white italic tracking-tight uppercase">Dashboard Stratégique
+                            (DG)</h2>
+                        <p class="text-xs text-dark-400">Gérez le climat social et anticipez les demandes du marché.</p>
+                    </div>
+                </div>
+                <div class="text-accent-400 group-hover:translate-x-2 transition-transform">
+                    ➜
+                </div>
+            </div>
+        </NuxtLink>
+
+        <!-- ── Statistiques ── -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+            <MarketingPanel />
             <div class="grid grid-cols-1 gap-4">
-                <MarketingPanel />
                 <OfficePanel />
                 <LoanPanel />
             </div>
-            <ManagementPanel />
         </div>
-
-        <QuestLog />
 
         <!-- ── Concurrence & Satisfaction ── -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
@@ -110,7 +128,7 @@ useHead({
                                 <p class="text-sm font-semibold text-accent-400">{{ companyStore.company.name }}</p>
                             </div>
                             <p class="text-lg font-bold text-accent-400">{{ companyStore.playerMarketShare.toFixed(1)
-                            }}%</p>
+                                }}%</p>
                         </div>
                         <div class="progress-bar">
                             <div class="progress-fill bg-accent-500"
