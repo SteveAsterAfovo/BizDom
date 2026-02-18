@@ -1,110 +1,99 @@
 <script setup lang="ts">
 /**
- * ── EventModal ──
- * Modal popup pour les événements aléatoires du jeu
- * S'affiche automatiquement quand un événement est déclenché
+ * ── EventModal (Notification Edition) ──
+ * Désormais non-bloquante, s'affiche en haut à droite.
  */
 import { useGameStore } from '~/stores/gameStore'
 
 const gameStore = useGameStore()
+const timer = ref<any>(null)
 
 // Couleur selon le type d'événement
 const eventStyle = computed(() => {
   if (!gameStore.currentEvent) return {}
   switch (gameStore.currentEvent.type) {
     case 'gain':
-      return { bg: 'bg-gain-500/10', border: 'border-gain-500/30', text: 'text-gain-400', label: 'Gain' }
+      return { bg: 'bg-gain-500/20', border: 'border-gain-500/40', text: 'text-gain-400', label: 'GAIN' }
     case 'loss':
-      return { bg: 'bg-loss-500/10', border: 'border-loss-500/30', text: 'text-loss-400', label: 'Perte' }
+      return { bg: 'bg-loss-500/20', border: 'border-loss-500/40', text: 'text-loss-400', label: 'PERTE' }
     case 'employee_departure':
-      return { bg: 'bg-warn-500/10', border: 'border-warn-500/30', text: 'text-warn-400', label: 'Départ' }
+      return { bg: 'bg-loss-600/20', border: 'border-loss-500/40', text: 'text-loss-400', label: 'CRISE RH' }
     case 'boost':
-      return { bg: 'bg-accent-500/10', border: 'border-accent-500/30', text: 'text-accent-400', label: 'Boost' }
+      return { bg: 'bg-accent-500/20', border: 'border-accent-500/40', text: 'text-accent-400', label: 'BOOST' }
     default:
-      return { bg: 'bg-dark-800', border: 'border-dark-700', text: 'text-dark-300', label: 'Événement' }
+      return { bg: 'bg-dark-800', border: 'border-dark-700', text: 'text-dark-300', label: 'INFO' }
   }
 })
 
-// Formater l'impact
+// Auto-dismiss après 8 secondes
+watch(() => gameStore.currentEvent, (newVal) => {
+  if (newVal) {
+    if (timer.value) clearTimeout(timer.value)
+    timer.value = setTimeout(() => {
+      gameStore.dismissEvent()
+    }, 8000)
+  }
+})
+
 function formatImpact(): string {
   if (!gameStore.currentEvent) return ''
   const e = gameStore.currentEvent
   switch (e.type) {
-    case 'gain':
-      return `+${new Intl.NumberFormat('fr-FR').format(e.impactValue)} FCFA`
-    case 'loss':
-      return `-${new Intl.NumberFormat('fr-FR').format(e.impactValue)} FCFA`
-    case 'employee_departure':
-      return 'Un employé a quitté'
-    case 'boost':
-      return `+${e.impactValue} niveau(x) de compétence`
-    default:
-      return ''
+    case 'gain': return `+${new Intl.NumberFormat('fr-FR').format(e.impactValue)} FCFA`
+    case 'loss': return `-${new Intl.NumberFormat('fr-FR').format(e.impactValue)} FCFA`
+    case 'employee_departure': return 'Départ immédiat'
+    case 'boost': return `+${e.impactValue} Skill UP`
+    default: return ''
   }
 }
 </script>
 
 <template>
   <Teleport to="body">
-    <Transition name="modal">
-      <div
-        v-if="gameStore.currentEvent"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4"
-      >
-        <!-- Backdrop -->
-        <div
-          class="absolute inset-0 bg-dark-950/80 backdrop-blur-sm"
-          @click="gameStore.dismissEvent()"
-        />
+    <Transition name="notification">
+      <div v-if="gameStore.currentEvent" class="fixed top-6 right-6 z-[100] w-full max-w-sm pointer-events-auto">
+        <!-- Card -->
+        <div :class="[
+          'relative overflow-hidden rounded-2xl p-5 border shadow-2xl backdrop-blur-md',
+          'bg-dark-900/90',
+          eventStyle.border,
+        ]">
+          <!-- Background Glow -->
+          <div :class="['absolute -top-10 -right-10 w-32 h-32 rounded-full blur-[60px] opacity-20', eventStyle.bg]">
+          </div>
 
-        <!-- Contenu de la modal -->
-        <div
-          :class="[
-            'relative w-full max-w-md rounded-2xl p-6 border animate-slide-up',
-            'bg-dark-900 shadow-2xl',
-            eventStyle.border,
-          ]"
-        >
-          <!-- Icône et badge -->
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-3">
-              <span class="text-4xl">{{ gameStore.currentEvent.icon }}</span>
-              <span :class="['badge', eventStyle.bg, eventStyle.text, 'border', eventStyle.border]">
-                {{ eventStyle.label }}
-              </span>
+          <div class="flex items-start gap-4">
+            <span class="text-4xl animate-bounce-slow">{{ gameStore.currentEvent.icon }}</span>
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span
+                  :class="['text-[9px] font-black px-2 py-0.5 rounded border uppercase tracking-wider', eventStyle.bg, eventStyle.text, eventStyle.border]">
+                  {{ eventStyle.label }}
+                </span>
+              </div>
+              <h2 class="text-sm font-black text-white uppercase italic tracking-tighter mb-1">
+                {{ gameStore.currentEvent.name }}
+              </h2>
+              <p class="text-[11px] text-dark-300 leading-tight mb-3">
+                {{ gameStore.currentEvent.description }}
+              </p>
+
+              <div
+                :class="['inline-block px-3 py-1 rounded-lg text-xs font-bold border', eventStyle.bg, eventStyle.border, eventStyle.text]">
+                {{ formatImpact() }}
+              </div>
             </div>
+
+            <button class="text-dark-500 hover:text-white transition-colors p-1" @click="gameStore.dismissEvent()">
+              ✕
+            </button>
           </div>
 
-          <!-- Titre -->
-          <h2 class="text-xl font-bold text-white mb-2">
-            {{ gameStore.currentEvent.name }}
-          </h2>
-
-          <!-- Description -->
-          <p class="text-dark-300 text-sm mb-4 leading-relaxed">
-            {{ gameStore.currentEvent.description }}
-          </p>
-
-          <!-- Impact -->
-          <div
-            :class="[
-              'p-3 rounded-xl mb-5 border',
-              eventStyle.bg, eventStyle.border,
-            ]"
-          >
-            <p class="text-xs text-dark-400 mb-0.5">Impact</p>
-            <p :class="['text-lg font-bold', eventStyle.text]">
-              {{ formatImpact() }}
-            </p>
+          <!-- Progress Bar (Auto-dismiss) -->
+          <div class="absolute bottom-0 left-0 h-1 bg-white/10 w-full">
+            <div class="h-full bg-current transition-all duration-[8000ms] ease-linear w-0" :class="eventStyle.text"
+              :style="{ width: gameStore.currentEvent ? '100%' : '0%' }"></div>
           </div>
-
-          <!-- Bouton fermer -->
-          <button
-            class="w-full btn-primary"
-            @click="gameStore.dismissEvent()"
-          >
-            Compris ✓
-          </button>
         </div>
       </div>
     </Transition>
@@ -112,22 +101,34 @@ function formatImpact(): string {
 </template>
 
 <style scoped>
-/* Animation de la modal */
-.modal-enter-active,
-.modal-leave-active {
-  transition: opacity 0.3s ease;
+.notification-enter-active,
+.notification-leave-active {
+  transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
 }
-.modal-enter-from,
-.modal-leave-to {
+
+.notification-enter-from {
+  transform: translateX(100%) scale(0.9);
   opacity: 0;
 }
-.modal-enter-active .relative,
-.modal-leave-active .relative {
-  transition: transform 0.3s ease, opacity 0.3s ease;
-}
-.modal-enter-from .relative,
-.modal-leave-to .relative {
-  transform: scale(0.95) translateY(10px);
+
+.notification-leave-to {
+  transform: translateX(40px);
   opacity: 0;
+}
+
+.animate-bounce-slow {
+  animation: bounce 3s infinite;
+}
+
+@keyframes bounce {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
 }
 </style>

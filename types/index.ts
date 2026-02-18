@@ -84,6 +84,7 @@ export interface Company {
     activePerks: number[]    // IDs des perks activés
     investorShare: number    // part détenue par les investisseurs (0 à 1)
     equipmentLevel: number   // niveau d'équipement (réduit fatigue)
+    lastUpgradeMonth: number // mois de la dernière amélioration matériel
 }
 
 /** Employé de l'entreprise */
@@ -99,6 +100,8 @@ export interface Employee {
     specialty: EmployeeSpecialty
     trainingDaysRemaining: number // jours restants de formation (0 = dispo)
     opinions: string[]            // avis/feedback récents
+    isOnStrike: boolean           // en grève ?
+    strikeDuration: number        // temps passé en grève (secondes)
 }
 
 /** Données du marché */
@@ -112,6 +115,8 @@ export interface MarketData {
     economicCycle: EconomicCycle
     cycleMonthsRemaining: number // mois avant changement de cycle
     demands: Record<EmployeeSpecialty, number> // index de besoin par spécialité (0-100)
+    organicGrowth: number     // croissance/déclin organique (+/- % par seconde)
+    lastActionTime: number    // timestamp de la dernière action majeure
 }
 
 /** Événement aléatoire du jeu */

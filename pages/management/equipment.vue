@@ -41,18 +41,44 @@ function formatCurrency(value: number): string {
           </div>
 
           <div class="p-6 rounded-2xl bg-dark-850 border border-dark-700">
-            <p class="text-xs text-accent-400 font-bold uppercase tracking-widest mb-2">Qualité Materielle</p>
-            <div class="flex justify-between items-end mb-4">
-              <h3 class="text-white font-bold text-lg">Équipement Niv. {{ companyStore.company.equipmentLevel }}</h3>
-              <p class="text-gain-400 text-xs font-bold">-{{ ((companyStore.company.equipmentLevel - 1) *
-                0.5).toFixed(1) }} Fatigue/tic</p>
+            <div class="flex justify-between items-start mb-2">
+              <div>
+                <p class="text-xs text-accent-400 font-bold uppercase tracking-widest mb-1">Qualité Materielle</p>
+                <h3 class="text-white font-bold text-lg">Équipement Niv. {{ companyStore.company.equipmentLevel }}</h3>
+              </div>
+              <div class="text-right">
+                <p class="text-gain-400 text-xs font-bold leading-tight">
+                  -{{ ((companyStore.company.equipmentLevel - 1) * 0.5).toFixed(1) }} Fatigue/tic
+                </p>
+                <p v-if="(useGameStore().currentMonth - companyStore.company.lastUpgradeMonth) > 0"
+                  class="text-loss-500 text-[9px] font-black uppercase italic animate-pulse">
+                  ⚠️ Obsolescence Active
+                </p>
+              </div>
+            </div>
+
+            <div class="mb-6 space-y-2">
+              <div class="flex justify-between text-[10px] text-dark-500 uppercase font-black">
+                <span>Âge de l'équipement</span>
+                <span
+                  :class="(useGameStore().currentMonth - companyStore.company.lastUpgradeMonth) > 3 ? 'text-loss-500' : 'text-dark-300'">
+                  {{ useGameStore().currentMonth - companyStore.company.lastUpgradeMonth }} mois (sim)
+                </span>
+              </div>
+              <div class="flex justify-between text-[10px] text-dark-500 uppercase font-black">
+                <span>Malus Productivité</span>
+                <span
+                  :class="(useGameStore().currentMonth - companyStore.company.lastUpgradeMonth) > 0 ? 'text-loss-500' : 'text-gain-500'">
+                  -{{ ((useGameStore().currentMonth - companyStore.company.lastUpgradeMonth) * 10).toFixed(0) }}%
+                </span>
+              </div>
             </div>
 
             <button
               class="w-full py-4 rounded-xl bg-gain-500 text-white font-black uppercase tracking-widest shadow-glow-gain hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
               :disabled="companyStore.cash < (50000 * companyStore.company.equipmentLevel)"
               @click="companyStore.upgradeEquipment()">
-              Upgrader ({{ formatCurrency(50000 * companyStore.company.equipmentLevel) }})
+              Moderniser ({{ formatCurrency(50000 * companyStore.company.equipmentLevel) }})
             </button>
           </div>
         </div>

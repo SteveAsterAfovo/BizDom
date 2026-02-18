@@ -48,11 +48,20 @@ export const useCompanyStore = defineStore('company', {
       ...companyData,
       investorShare: 0,
       equipmentLevel: 1,
+      lastUpgradeMonth: 1,
     } as Company,
-    employees: employeesData.map((e) => ({ ...e, trainingDaysRemaining: 0, opinions: [] })) as Employee[],
+    employees: employeesData.map((e) => ({
+      ...e,
+      trainingDaysRemaining: 0,
+      opinions: [],
+      isOnStrike: false,
+      strikeDuration: 0
+    })) as Employee[],
     market: {
       ...marketData,
-      demands: { tech: 50, sales: 50, creative: 50, hr: 50, management: 50 }
+      demands: { tech: 50, sales: 50, creative: 50, hr: 50, management: 50 },
+      organicGrowth: 0,
+      lastActionTime: Date.now(),
     } as MarketData,
     marketingBudget: 5000,
     recruitPool: RECRUIT_POOL.map((c) => ({ ...c })),
@@ -185,6 +194,13 @@ export const useCompanyStore = defineStore('company', {
       const competitorShares = state.competitors.reduce((sum, c) => sum + c.marketShare, 0)
       return Math.max(0, 100 - competitorShares)
     },
+
+    /** Risque de grève (0-100) basé sur fatigue moyenne et manque de perks */
+    strikeRisk(): number {
+      const fatigueFactor = Math.max(0, this.averageFatigue - 50) * 2 // Augmente après 50% fatigue
+      const perkFactor = Math.max(0, 50 - (this.company.activePerks.length * 15)) // Moins de 3 perks = risque
+      return Math.min(100, fatigueFactor + perkFactor)
+    }
   },
 
   actions: {
@@ -208,6 +224,8 @@ export const useCompanyStore = defineStore('company', {
         specialty: candidate.specialty,
         trainingDaysRemaining: 0,
         opinions: [],
+        isOnStrike: false,
+        strikeDuration: 0,
       })
     },
 
@@ -471,14 +489,24 @@ export const useCompanyStore = defineStore('company', {
       }
     },
 
-    /** Réinitialiser les données de l'entreprise */
     /**
- * Applique un "tick" de simulation (fraction d'un mois)
- * @param dayFraction La portion de mois écoulée (ex: 1/30)
- */
+     * Applique un "tick" de simulation (fraction d'un mois)
+     * @param dayFraction La portion de mois écoulée (ex: 1/3600)
+     */
     applyTick(dayFraction: number) {
       // 1. Mise à jour de la trésorerie (Revenus - Dépenses au prorata)
-      const monthlyRevenue = this.market.customerBase * this.company.revenuePerCustomer * this.getCycleMultiplier()
+      const gameStore = useGameStore()
+      const cycleMult = this.getCycleMultiplier()
+
+      // Obsolescence : -10% productivité par mois de retard (1 heure réelle = 1 mois)
+      const monthsSinceUpgrade = gameStore.currentMonth - this.company.lastUpgradeMonth
+      const obsolescenceMalus = Math.max(0.5, 1 - (monthsSinceUpgrade * 0.1))
+
+      const monthlyRevenue = this.market.customerBase
+        * this.company.revenuePerCustomer
+        * cycleMult
+        * this.productivity
+        * obsolescenceMalus
 
       // Part investisseurs
       const investorShare = monthlyRevenue * this.company.investorShare
@@ -489,29 +517,53 @@ export const useCompanyStore = defineStore('company', {
       const tickProfit = (companyRevenue - monthlyExpenses) * dayFraction
       this.company.cash += tickProfit
 
-      // 2. Fatigue granulaire
-      this.employees.forEach(emp => {
-        let fatigueGain = 3 // Base
+      // 2. Gestion HR Hardcore : Grèves & Rebellion
+      const strikeRisk = this.strikeRisk / 100 // 0.0 to 1.0
+      let strikeCount = 0
 
-        // Réduction via Equipement
+      this.employees.forEach(emp => {
+        // Progression de la fatigue
+        let fatigueGain = 3
         const equipReduction = (this.company.equipmentLevel - 1) * 0.5
         fatigueGain = Math.max(1, fatigueGain - equipReduction)
-
         const activePerks = this.availablePerks.filter(p => this.company.activePerks.includes(p.id))
         const reduction = activePerks.reduce((sum, p) => sum + p.fatigueReduction, 0)
-
         const finalGain = Math.max(0, (fatigueGain - reduction) * dayFraction)
         emp.fatigue = Math.min(100, emp.fatigue + finalGain)
 
-        // Feedback aléatoire (1% de chance par seconde)
+        // Logique de Grève (Check par seconde)
+        if (!emp.isOnStrike && emp.fatigue > 70 && Math.random() < (strikeRisk * 0.01)) {
+          emp.isOnStrike = true
+          this.generateEmployeeFeedback(emp.id) // "Je me mets en grève !"
+        }
+
+        if (emp.isOnStrike) {
+          strikeCount++
+          emp.strikeDuration += 1 // incrément par seconde (approximatif)
+          emp.motivation = Math.max(0, emp.motivation - 0.5) // Désespoir
+
+          // Démission après 2 minutes de grève (120s)
+          if (emp.strikeDuration > 120) {
+            this.fireEmployee(emp.id)
+            gameStore.triggerEvent({
+              id: 99,
+              name: "Démission Brutale",
+              description: `${emp.name} a quitté le navire après une grève épuisante.`,
+              type: "employee_departure",
+              impactValue: 0,
+              icon: "🚶",
+              probability: 1
+            })
+          }
+        }
+
+        // Feedback aléatoire
         if (Math.random() < 0.01) {
           this.generateEmployeeFeedback(emp.id)
         }
 
-        // 3. Gestion de la formation
+        // Gestion de la formation
         if (emp.trainingDaysRemaining > 0) {
-          // On réduit le temps restant (0.1 jour par tick environ si 30 jours/mois)
-          // En fait dayFraction est 1/30 si on est au jour.
           emp.trainingDaysRemaining -= dayFraction * 30
           if (emp.trainingDaysRemaining <= 0) {
             emp.trainingDaysRemaining = 0
@@ -521,10 +573,29 @@ export const useCompanyStore = defineStore('company', {
         }
       })
 
-      // 4. Acquisition client granulaire
+      // Effet Domino : Les grévistes plombent le moral des autres
+      if (strikeCount > 0) {
+        this.employees.forEach(e => {
+          if (!e.isOnStrike) e.motivation = Math.max(5, e.motivation - (strikeCount * 0.1))
+        })
+      }
+
+      // 3. Volatilité du Marché & Inaction
+      // Si aucune action majeure (quêtes complétées) depuis 10 min (600s)
+      const secondsSinceAction = (Date.now() - this.market.lastActionTime) / 1000
+      if (secondsSinceAction > 600) {
+        // Déclin organique : -0.1% de clients par seconde
+        const decline = Math.max(1, Math.round(this.market.customerBase * 0.001))
+        this.market.customerBase -= decline
+        this.market.organicGrowth = -0.01
+      } else {
+        this.market.organicGrowth = 0.001 // Croissance légère
+      }
+
+      // Acquisition client
       const monthlyNew = this.estimatedNewCustomers
       if (monthlyNew > 0) {
-        if (Math.random() < (monthlyNew / 30)) {
+        if (Math.random() < (monthlyNew / 3600)) { // recalibré pour 1h
           this.market.customerBase++
         }
       }
@@ -535,11 +606,20 @@ export const useCompanyStore = defineStore('company', {
         ...companyData,
         investorShare: 0,
         equipmentLevel: 1,
+        lastUpgradeMonth: 1,
       } as Company
-      this.employees = employeesData.map((e) => ({ ...e, trainingDaysRemaining: 0, opinions: [] })) as Employee[]
+      this.employees = employeesData.map((e) => ({
+        ...e,
+        trainingDaysRemaining: 0,
+        opinions: [],
+        isOnStrike: false,
+        strikeDuration: 0
+      })) as Employee[]
       this.market = {
         ...marketData,
-        demands: { tech: 50, sales: 50, creative: 50, hr: 50, management: 50 }
+        demands: { tech: 50, sales: 50, creative: 50, hr: 50, management: 50 },
+        organicGrowth: 0,
+        lastActionTime: Date.now(),
       } as MarketData
       this.marketingBudget = 5000
       this.recruitPool = RECRUIT_POOL.map((c) => ({ ...c }))
@@ -565,15 +645,30 @@ export const useCompanyStore = defineStore('company', {
 
     /** Améliorer l'équipement de bureau */
     upgradeEquipment() {
+      const gameStore = useGameStore()
       const cost = 50000 * this.company.equipmentLevel
       if (this.company.cash >= cost) {
         this.company.cash -= cost
         this.company.equipmentLevel++
+        this.company.lastUpgradeMonth = gameStore.currentMonth
       }
     },
 
     /** Lever des fonds (100k contre 5% d'equity) */
     raiseFunds() {
+      if (this.strikeRisk > 40) {
+        const gameStore = useGameStore()
+        gameStore.triggerEvent({
+          id: 98,
+          name: "Investissement Refusé",
+          description: "Les investisseurs s'inquiètent de la grève imminente et du climat social délétère.",
+          type: "loss",
+          impactValue: 0,
+          icon: "🚫",
+          probability: 1
+        })
+        return
+      }
       const amount = 100000
       const share = 0.05
       this.company.cash += amount
@@ -595,7 +690,8 @@ export const useCompanyStore = defineStore('company', {
       }
 
       let category: keyof typeof feedbacks = 'neutral'
-      if (emp.fatigue > 70) category = 'high_fatigue'
+      if (emp.isOnStrike) category = 'high_fatigue'
+      else if (emp.fatigue > 70) category = 'high_fatigue'
       else if (emp.motivation < 30) category = 'low_motivation'
       else if (emp.motivation > 85) category = 'high_motivation'
       else if (this.company.activePerks.length > 2 && Math.random() < 0.3) category = 'perks'

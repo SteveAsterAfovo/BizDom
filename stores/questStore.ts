@@ -98,6 +98,9 @@ export const useQuestStore = defineStore('quests', {
           })
         }
 
+        // Mettre à jour le timestamp de dernière action pour éviter le déclin organique
+        companyStore.market.lastActionTime = Date.now()
+
         // Supprimer après 3 secondes (feedback visuel)
         setTimeout(() => {
           this.removeQuest(questId)
