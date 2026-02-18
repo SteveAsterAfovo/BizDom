@@ -5,7 +5,10 @@
         "role": "Développeur Web",
         "skillLevel": 4,
         "salary": 8000,
-        "motivation": 85
+        "motivation": 85,
+        "fatigue": 10,
+        "monthsEmployed": 0,
+        "specialty": "tech"
     },
     {
         "id": 2,
@@ -13,7 +16,10 @@
         "role": "Designer UX",
         "skillLevel": 3,
         "salary": 6500,
-        "motivation": 70
+        "motivation": 70,
+        "fatigue": 5,
+        "monthsEmployed": 0,
+        "specialty": "creative"
     },
     {
         "id": 3,
@@ -21,7 +27,10 @@
         "role": "Chef de Projet",
         "skillLevel": 5,
         "salary": 12000,
-        "motivation": 90
+        "motivation": 90,
+        "fatigue": 0,
+        "monthsEmployed": 0,
+        "specialty": "management"
     },
     {
         "id": 4,
@@ -29,7 +38,10 @@
         "role": "Commercial",
         "skillLevel": 3,
         "salary": 5500,
-        "motivation": 60
+        "motivation": 60,
+        "fatigue": 15,
+        "monthsEmployed": 0,
+        "specialty": "sales"
     },
     {
         "id": 5,
@@ -37,6 +49,9 @@
         "role": "Comptable",
         "skillLevel": 4,
         "salary": 7000,
-        "motivation": 75
+        "motivation": 75,
+        "fatigue": 5,
+        "monthsEmployed": 0,
+        "specialty": "hr"
     }
 ]

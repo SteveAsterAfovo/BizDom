@@ -4,5 +4,7 @@
   "revenuePerCustomer": 150,
   "taxRate": 0.25,
   "fixedCosts": 15000,
-  "variableCostPerEmployee": 2000
+  "variableCostPerEmployee": 2000,
+  "currentOfficeId": 1,
+  "activePerks": []
 }

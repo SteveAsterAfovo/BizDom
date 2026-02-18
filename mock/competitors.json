@@ -1,0 +1,26 @@
+[
+    {
+        "id": 1,
+        "name": "AfriTech Solutions",
+        "marketShare": 25,
+        "strength": 3,
+        "growthRate": 0.02,
+        "icon": "🦁"
+    },
+    {
+        "id": 2,
+        "name": "SahelDigital Inc.",
+        "marketShare": 20,
+        "strength": 4,
+        "growthRate": 0.03,
+        "icon": "🌍"
+    },
+    {
+        "id": 3,
+        "name": "NovaCorp Dakar",
+        "marketShare": 15,
+        "strength": 2,
+        "growthRate": 0.015,
+        "icon": "🚀"
+    }
+]

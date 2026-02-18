@@ -98,13 +98,15 @@ useHead({
             </div>
 
             <!-- ── Graphiques ── -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
-                <LineChart title="💰 Trésorerie dans le temps" :labels="gameStore.monthLabels" :datasets="[
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+                <LineChart title="💰 Trésorerie" :labels="gameStore.monthLabels" :datasets="[
                     { label: 'Trésorerie', data: gameStore.cashHistory, borderColor: '#6366f1' },
                 ]" />
-                <LineChart title="📊 Revenus vs Profit net" :labels="gameStore.monthLabels" :datasets="[
-                    { label: 'Revenus', data: gameStore.revenueHistory, borderColor: '#10b981' },
+                <LineChart title="📊 Profit net" :labels="gameStore.monthLabels" :datasets="[
                     { label: 'Profit net', data: gameStore.netProfitHistory, borderColor: '#f59e0b' },
+                ]" />
+                <LineChart title="😊 Satisfaction" :labels="gameStore.monthLabels" :datasets="[
+                    { label: 'Satisfaction', data: gameStore.satisfactionHistory, borderColor: '#10b981' },
                 ]" />
             </div>
 
@@ -131,7 +133,7 @@ useHead({
                                 <td class="py-3 px-3 text-white font-medium">Mois {{ report.month }}</td>
                                 <td class="py-3 px-3 text-right text-gain-400">{{ formatCurrency(report.revenue) }}</td>
                                 <td class="py-3 px-3 text-right text-loss-400">{{ formatCurrency(report.totalExpenses)
-                                    }}</td>
+                                }}</td>
                                 <td
                                     :class="['py-3 px-3 text-right font-medium', report.profit >= 0 ? 'text-gain-400' : 'text-loss-400']">
                                     {{ formatCurrency(report.profit) }}

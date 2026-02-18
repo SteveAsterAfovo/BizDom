@@ -1,0 +1,42 @@
+[
+    {
+        "id": 1,
+        "name": "Garage",
+        "rent": 0,
+        "maxEmployees": 3,
+        "prestige": 1,
+        "icon": "🏠"
+    },
+    {
+        "id": 2,
+        "name": "Espace Coworking",
+        "rent": 5000,
+        "maxEmployees": 6,
+        "prestige": 2,
+        "icon": "🏢"
+    },
+    {
+        "id": 3,
+        "name": "Bureau PME",
+        "rent": 15000,
+        "maxEmployees": 12,
+        "prestige": 3,
+        "icon": "🏬"
+    },
+    {
+        "id": 4,
+        "name": "Tour d'Affaires",
+        "rent": 35000,
+        "maxEmployees": 25,
+        "prestige": 4,
+        "icon": "🏙️"
+    },
+    {
+        "id": 5,
+        "name": "Siège Premium",
+        "rent": 60000,
+        "maxEmployees": 50,
+        "prestige": 5,
+        "icon": "🏛️"
+    }
+]

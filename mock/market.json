@@ -2,5 +2,9 @@
     "customerBase": 50,
     "acquisitionCoefficient": 0.005,
     "marketGrowth": 0.02,
-    "inflation": 0.01
+    "inflation": 0.01,
+    "satisfaction": 80,
+    "churnRate": 0.02,
+    "economicCycle": "stable",
+    "cycleMonthsRemaining": 12
 }

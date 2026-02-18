@@ -1,0 +1,56 @@
+[
+    {
+        "id": 1,
+        "name": "Café gratuit",
+        "cost": 500,
+        "motivationBoost": 3,
+        "fatigueReduction": 2,
+        "icon": "☕",
+        "description": "Machine à café premium en libre-service"
+    },
+    {
+        "id": 2,
+        "name": "Assurance santé",
+        "cost": 2000,
+        "motivationBoost": 5,
+        "fatigueReduction": 3,
+        "icon": "🏥",
+        "description": "Couverture médicale complète pour les employés"
+    },
+    {
+        "id": 3,
+        "name": "Télétravail",
+        "cost": 1000,
+        "motivationBoost": 8,
+        "fatigueReduction": 5,
+        "icon": "🏡",
+        "description": "2 jours de télétravail par semaine"
+    },
+    {
+        "id": 4,
+        "name": "Salle de sport",
+        "cost": 3000,
+        "motivationBoost": 4,
+        "fatigueReduction": 8,
+        "icon": "💪",
+        "description": "Accès à une salle de sport au bureau"
+    },
+    {
+        "id": 5,
+        "name": "Formation continue",
+        "cost": 4000,
+        "motivationBoost": 6,
+        "fatigueReduction": 0,
+        "icon": "📚",
+        "description": "Budget formation trimestriel pour chaque employé"
+    },
+    {
+        "id": 6,
+        "name": "Team Building",
+        "cost": 2500,
+        "motivationBoost": 10,
+        "fatigueReduction": 4,
+        "icon": "🎉",
+        "description": "Activités de cohésion d'équipe mensuelles"
+    }
+]

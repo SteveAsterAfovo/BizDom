@@ -1,121 +1,78 @@
 <script setup lang="ts">
 /**
- * ── Layout Principal ──
- * Sidebar de navigation + zone de contenu principale
- * Design sombre premium avec sidebar rétractable
+ * ── Layout Default ──
+ * Layout principal avec sidebar navigable, AchievementToast global
  */
+const isSidebarOpen = ref(true)
 
-const route = useRoute()
-
-// État de la sidebar (rétractable)
-const sidebarCollapsed = ref(false)
-
-// Navigation du jeu
-const navItems = [
-  { path: '/', label: 'Dashboard', icon: '📊', description: 'Vue d\'ensemble' },
-  { path: '/employees', label: 'Employés', icon: '👥', description: 'Gestion du personnel' },
-  { path: '/reports', label: 'Rapports', icon: '📈', description: 'Historique mensuel' },
+const navLinks = [
+  { to: '/', icon: '📊', label: 'Dashboard' },
+  { to: '/employees', icon: '👥', label: 'Employés' },
+  { to: '/reports', icon: '📋', label: 'Rapports' },
+  { to: '/achievements', icon: '🏆', label: 'Succès' },
 ]
-
-// Vérifier si un lien est actif
-function isActive(path: string): boolean {
-  return route.path === path
-}
 </script>
 
 <template>
-  <div class="flex min-h-screen bg-dark-950">
+  <div class="min-h-screen bg-dark-950 flex">
     <!-- ── Sidebar ── -->
-    <aside
-      :class="[
-        'fixed left-0 top-0 h-screen z-40 flex flex-col transition-all duration-300 ease-out',
-        'bg-dark-900/95 backdrop-blur-xl border-r border-dark-700/50',
-        sidebarCollapsed ? 'w-20' : 'w-64',
-      ]"
-    >
-      <!-- Logo & titre -->
-      <div class="flex items-center gap-3 px-5 py-6 border-b border-dark-700/50">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-500 to-accent-700 flex items-center justify-center text-xl font-black shadow-glow-accent flex-shrink-0">
-          B
-        </div>
+    <aside :class="[
+      'flex flex-col bg-dark-900 border-r border-dark-800/50 transition-all duration-300',
+      isSidebarOpen ? 'w-56' : 'w-16',
+    ]">
+      <!-- Logo / Header -->
+      <div class="p-4 flex items-center gap-3 border-b border-dark-800/50">
+        <button class="text-2xl flex-shrink-0" @click="isSidebarOpen = !isSidebarOpen" title="Toggle sidebar">
+          🎮
+        </button>
         <Transition name="fade">
-          <div v-if="!sidebarCollapsed" class="overflow-hidden">
-            <h1 class="text-lg font-bold tracking-tight text-white">BIZDOM</h1>
-            <p class="text-xs text-dark-400">Simulation d'entreprise</p>
-          </div>
+          <span v-if="isSidebarOpen" class="text-white font-black text-xl tracking-wider">
+            BIZDOM
+          </span>
         </Transition>
       </div>
 
       <!-- Navigation -->
-      <nav class="flex-1 px-3 py-4 space-y-1">
-        <NuxtLink
-          v-for="item in navItems"
-          :key="item.path"
-          :to="item.path"
-          :class="[
-            'flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group',
-            isActive(item.path)
-              ? 'bg-accent-600/20 text-accent-400 shadow-glow-accent'
-              : 'text-dark-300 hover:bg-dark-800/60 hover:text-dark-100',
-          ]"
-        >
-          <span class="text-xl flex-shrink-0 w-8 text-center">{{ item.icon }}</span>
+      <nav class="flex-1 py-4 space-y-1 px-2">
+        <NuxtLink v-for="link in navLinks" :key="link.to" :to="link.to" :class="[
+          'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
+          'hover:bg-dark-800/60 hover:text-white',
+          $route.path === link.to
+            ? 'bg-accent-600/20 text-accent-400'
+            : 'text-dark-400',
+        ]">
+          <span class="text-lg flex-shrink-0">{{ link.icon }}</span>
           <Transition name="fade">
-            <div v-if="!sidebarCollapsed" class="overflow-hidden">
-              <span class="font-medium text-sm">{{ item.label }}</span>
-              <p class="text-xs text-dark-500 group-hover:text-dark-400">{{ item.description }}</p>
-            </div>
+            <span v-if="isSidebarOpen">{{ link.label }}</span>
           </Transition>
-          <!-- Indicateur actif -->
-          <div
-            v-if="isActive(item.path)"
-            class="absolute right-0 w-1 h-8 bg-accent-500 rounded-l-full"
-          />
         </NuxtLink>
       </nav>
 
-      <!-- Bouton collapse -->
-      <button
-        class="mx-3 mb-4 p-2.5 rounded-xl text-dark-400 hover:text-dark-100 hover:bg-dark-800/60 transition-all duration-200 flex items-center justify-center"
-        @click="sidebarCollapsed = !sidebarCollapsed"
-      >
-        <span
-          :class="[
-            'text-lg transition-transform duration-300',
-            sidebarCollapsed ? 'rotate-180' : '',
-          ]"
-        >
-          ◀
-        </span>
-      </button>
+      <!-- Footer sidebar -->
+      <div v-if="isSidebarOpen" class="p-4 border-t border-dark-800/50">
+        <p class="text-xs text-dark-600 text-center">BIZDOM v2.0</p>
+      </div>
     </aside>
 
-    <!-- ── Contenu Principal ── -->
-    <main
-      :class="[
-        'flex-1 transition-all duration-300 min-h-screen',
-        sidebarCollapsed ? 'ml-20' : 'ml-64',
-      ]"
-    >
-      <div class="p-6 lg:p-8 max-w-7xl mx-auto">
-        <slot />
-      </div>
+    <!-- ── Contenu principal ── -->
+    <main class="flex-1 p-6 lg:p-8 overflow-y-auto max-h-screen">
+      <slot />
     </main>
 
-    <!-- ── EventModal global ── -->
+    <!-- ── Composants globaux ── -->
     <EventModal />
+    <AchievementToast />
   </div>
 </template>
 
 <style scoped>
-/* Transitions pour le texte de la sidebar */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.2s ease;
 }
+
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
-  transform: translateX(-8px);
 }
 </style>

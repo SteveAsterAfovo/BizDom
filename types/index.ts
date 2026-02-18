@@ -3,6 +3,75 @@
  * Toutes les interfaces TypeScript pour le jeu de simulation entrepreneuriale
  */
 
+// ─── Spécialités des employés ───
+export type EmployeeSpecialty = 'tech' | 'sales' | 'creative' | 'hr' | 'management'
+
+// ─── Cycles économiques ───
+export type EconomicCycle = 'growth' | 'stable' | 'recession'
+
+/** Bureau / espace de travail */
+export interface Office {
+    id: number
+    name: string
+    rent: number            // loyer mensuel
+    maxEmployees: number    // capacité maximale
+    prestige: number        // 1 à 5
+    icon: string
+}
+
+/** Avantage social proposé aux employés */
+export interface Perk {
+    id: number
+    name: string
+    cost: number            // coût mensuel
+    motivationBoost: number // bonus motivation par mois
+    fatigueReduction: number // réduction de fatigue par mois
+    icon: string
+    description: string
+}
+
+/** Prêt bancaire */
+export interface Loan {
+    id: number
+    amount: number          // montant emprunté
+    interestRate: number    // taux d'intérêt mensuel (ex: 0.03 = 3%)
+    remainingMonths: number // mois restants
+    monthlyPayment: number  // mensualité calculée
+    totalPaid: number       // total déjà remboursé
+}
+
+/** Succès / Achievement */
+export interface Achievement {
+    id: string
+    name: string
+    description: string
+    icon: string
+    condition: string       // clé de condition (évaluée dans le code)
+    unlocked: boolean
+    unlockedAt?: number     // mois de déverrouillage
+}
+
+/** Concurrent IA */
+export interface Competitor {
+    id: number
+    name: string
+    marketShare: number     // part de marché (0 à 100)
+    strength: number        // 1 à 5
+    growthRate: number      // croissance mensuelle
+    icon: string
+}
+
+/** Canal marketing */
+export interface MarketingChannel {
+    id: number
+    name: string
+    costPerUnit: number     // coût par unité de budget
+    efficiency: number      // efficacité (multiplicateur)
+    icon: string
+    description: string
+    budget: number          // budget alloué par le joueur
+}
+
 /** Données de l'entreprise du joueur */
 export interface Company {
     name: string
@@ -11,6 +80,8 @@ export interface Company {
     taxRate: number
     fixedCosts: number
     variableCostPerEmployee: number
+    currentOfficeId: number
+    activePerks: number[]    // IDs des perks activés
 }
 
 /** Employé de l'entreprise */
@@ -18,9 +89,12 @@ export interface Employee {
     id: number
     name: string
     role: string
-    skillLevel: number      // 1 à 5
+    skillLevel: number        // 1 à 5
     salary: number
-    motivation: number      // 0 à 100
+    motivation: number        // 0 à 100
+    fatigue: number           // 0 à 100 (0 = reposé, 100 = burn-out)
+    monthsEmployed: number    // ancienneté en mois
+    specialty: EmployeeSpecialty
 }
 
 /** Données du marché */
@@ -29,6 +103,10 @@ export interface MarketData {
     acquisitionCoefficient: number
     marketGrowth: number
     inflation: number
+    satisfaction: number      // 0 à 100 (NPS score)
+    churnRate: number         // taux de perte de clients (0 à 1)
+    economicCycle: EconomicCycle
+    cycleMonthsRemaining: number // mois avant changement de cycle
 }
 
 /** Événement aléatoire du jeu */
@@ -36,7 +114,7 @@ export interface GameEvent {
     id: number
     name: string
     description: string
-    probability: number     // 0 à 1
+    probability: number       // 0 à 1
     type: 'loss' | 'gain' | 'employee_departure' | 'boost'
     impactValue: number
     icon: string
@@ -59,6 +137,11 @@ export interface MonthlyReport {
     newCustomers: number
     marketingBudget: number
     event: GameEvent | null
+    loanPayments: number
+    officeRent: number
+    churnedCustomers: number
+    satisfaction: number
+    perksCost: number
 }
 
 /** État global du jeu */
@@ -79,4 +162,7 @@ export interface RecruitCandidate {
     skillLevel: number
     salary: number
     motivation: number
+    fatigue: number
+    monthsEmployed: number
+    specialty: EmployeeSpecialty
 }

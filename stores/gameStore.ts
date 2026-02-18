@@ -1,9 +1,11 @@
 /**
  * ── Game Store ──
- * Gère l'état global du jeu : mois courant, rapports, événements
+ * Gère l'état global du jeu : mois courant, rapports, événements,
+ * achievements, mode sombre/clair
  */
 import { defineStore } from 'pinia'
-import type { GameEvent, MonthlyReport } from '~/types'
+import type { GameEvent, MonthlyReport, Achievement } from '~/types'
+import achievementsData from '~/mock/achievements.json'
 
 interface GameStoreState {
     currentMonth: number
@@ -12,6 +14,9 @@ interface GameStoreState {
     currentEvent: GameEvent | null
     isSimulating: boolean
     gameOver: boolean
+    achievements: Achievement[]
+    recentAchievement: Achievement | null
+    darkMode: boolean
 }
 
 export const useGameStore = defineStore('game', {
@@ -22,6 +27,9 @@ export const useGameStore = defineStore('game', {
         currentEvent: null,
         isSimulating: false,
         gameOver: false,
+        achievements: achievementsData.map((a) => ({ ...a })) as Achievement[],
+        recentAchievement: null,
+        darkMode: true,
     }),
 
     getters: {
@@ -47,6 +55,20 @@ export const useGameStore = defineStore('game', {
         /** Historique du profit net pour graphiques */
         netProfitHistory: (state): number[] =>
             state.reports.map((r) => r.netProfit),
+
+        /** Historique de la satisfaction */
+        satisfactionHistory: (state): number[] =>
+            state.reports.map((r) => r.satisfaction),
+
+        /** Nombre d'achievements débloqués */
+        unlockedCount: (state): number =>
+            state.achievements.filter((a) => a.unlocked).length,
+
+        /** Progression des achievements (0-100) */
+        achievementProgress: (state): number => {
+            if (state.achievements.length === 0) return 0
+            return Math.round((state.achievements.filter((a) => a.unlocked).length / state.achievements.length) * 100)
+        },
     },
 
     actions: {
@@ -81,6 +103,60 @@ export const useGameStore = defineStore('game', {
             this.gameOver = true
         },
 
+        /** Basculer le mode sombre/clair */
+        toggleDarkMode() {
+            this.darkMode = !this.darkMode
+            if (this.darkMode) {
+                document.documentElement.classList.add('dark')
+            } else {
+                document.documentElement.classList.remove('dark')
+            }
+        },
+
+        /** Débloquer un achievement */
+        unlockAchievement(achievementId: string) {
+            const achievement = this.achievements.find((a) => a.id === achievementId)
+            if (achievement && !achievement.unlocked) {
+                achievement.unlocked = true
+                achievement.unlockedAt = this.currentMonth
+                this.recentAchievement = achievement
+                // Auto-dismiss après 4 secondes
+                setTimeout(() => {
+                    this.recentAchievement = null
+                }, 4000)
+            }
+        },
+
+        /** Vérifier et débloquer les achievements */
+        checkAchievements(cash: number, employeeCount: number, customerBase: number, officeId: number) {
+            // Premier million
+            if (cash >= 1000000) this.unlockAchievement('first_million')
+
+            // 10 employés
+            if (employeeCount >= 10) this.unlockAchievement('employees_10')
+
+            // 25 employés
+            if (employeeCount >= 25) this.unlockAchievement('employees_25')
+
+            // Audit fiscal (vérifié via événement)
+            const hasAudit = this.eventHistory.some((e) => e.id === 5)
+            if (hasAudit && cash > 0) this.unlockAchievement('survived_audit')
+
+            // 6 mois consécutifs de profit
+            if (this.reports.length >= 6) {
+                const lastSix = this.reports.slice(-6)
+                if (lastSix.every((r) => r.netProfit > 0)) {
+                    this.unlockAchievement('six_months_profit')
+                }
+            }
+
+            // Bureau premium
+            if (officeId >= 5) this.unlockAchievement('premium_office')
+
+            // 500 clients
+            if (customerBase >= 500) this.unlockAchievement('customers_500')
+        },
+
         /** Réinitialiser le jeu */
         resetGame() {
             this.currentMonth = 1
@@ -89,6 +165,8 @@ export const useGameStore = defineStore('game', {
             this.currentEvent = null
             this.isSimulating = false
             this.gameOver = false
+            this.achievements = achievementsData.map((a) => ({ ...a })) as Achievement[]
+            this.recentAchievement = null
         },
     },
 })

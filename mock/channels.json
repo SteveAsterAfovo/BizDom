@@ -1,0 +1,29 @@
+[
+    {
+        "id": 1,
+        "name": "Réseaux Sociaux",
+        "costPerUnit": 1,
+        "efficiency": 0.006,
+        "icon": "📱",
+        "description": "Publicités sur Facebook, Instagram et TikTok",
+        "budget": 3000
+    },
+    {
+        "id": 2,
+        "name": "Affichage Publicitaire",
+        "costPerUnit": 1,
+        "efficiency": 0.004,
+        "icon": "📺",
+        "description": "Panneaux publicitaires, radio et TV locales",
+        "budget": 1000
+    },
+    {
+        "id": 3,
+        "name": "Influenceurs",
+        "costPerUnit": 1,
+        "efficiency": 0.008,
+        "icon": "🌟",
+        "description": "Partenariats avec des influenceurs locaux",
+        "budget": 1000
+    }
+]

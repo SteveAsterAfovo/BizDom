@@ -1,0 +1,82 @@
+[
+    {
+        "id": "first_million",
+        "name": "Premier Million",
+        "description": "Atteignez 1 000 000 FCFA de trésorerie",
+        "icon": "💰",
+        "condition": "cash_1000000",
+        "unlocked": false
+    },
+    {
+        "id": "employees_10",
+        "name": "Petite Équipe",
+        "description": "Ayez 10 employés simultanément",
+        "icon": "👥",
+        "condition": "employees_10",
+        "unlocked": false
+    },
+    {
+        "id": "employees_25",
+        "name": "Grande Entreprise",
+        "description": "Ayez 25 employés simultanément",
+        "icon": "🏢",
+        "condition": "employees_25",
+        "unlocked": false
+    },
+    {
+        "id": "survived_audit",
+        "name": "Survécu à l'Audit",
+        "description": "Survivez à un audit fiscal",
+        "icon": "📋",
+        "condition": "survived_audit",
+        "unlocked": false
+    },
+    {
+        "id": "six_months_profit",
+        "name": "Série Gagnante",
+        "description": "6 mois consécutifs de profit positif",
+        "icon": "📈",
+        "condition": "six_months_profit",
+        "unlocked": false
+    },
+    {
+        "id": "premium_office",
+        "name": "Prestige Ultime",
+        "description": "Déménagez dans le Siège Premium",
+        "icon": "🏛️",
+        "condition": "office_5",
+        "unlocked": false
+    },
+    {
+        "id": "zero_fatigue",
+        "name": "Bien-être au Travail",
+        "description": "Maintenez la fatigue de tous les employés sous 20%",
+        "icon": "😌",
+        "condition": "low_fatigue",
+        "unlocked": false
+    },
+    {
+        "id": "first_loan",
+        "name": "Crédit Maître",
+        "description": "Remboursez votre premier prêt en totalité",
+        "icon": "🏦",
+        "condition": "loan_repaid",
+        "unlocked": false
+    },
+    {
+        "id": "market_leader",
+        "name": "Leader du Marché",
+        "description": "Dépassez tous les concurrents en parts de marché",
+        "icon": "👑",
+        "condition": "market_leader",
+        "unlocked": false
+    },
+    {
+        "id": "customers_500",
+        "name": "Popularité Assurée",
+        "description": "Atteignez 500 clients",
+        "icon": "🎯",
+        "condition": "customers_500",
+        "unlocked": false
+    }
+]
