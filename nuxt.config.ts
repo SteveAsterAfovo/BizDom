@@ -43,6 +43,7 @@ export default defineNuxtConfig({
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         { name: 'description', content: 'Jeu de simulation entrepreneuriale - Gérez votre entreprise et bâtissez votre empire !' },
+        { name: 'google-site-verification', content: 'OdKxHpVkBSxk0mj4vD4OTmZPdVi5pWzyCu4QPIMHy9A' }
       ],
       link: [
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
