@@ -589,14 +589,21 @@ export const useCompanyStore = defineStore('company', {
         }
       })
 
-      // 2. Progression des Projets
       this.activeProjects.forEach((project: Project) => {
         if (project.status === 'active') {
           const assigned = this.employees.filter(e => project.assignedEmployees.includes(e.id))
           if (assigned.length > 0) {
+            // Efficacité basée sur Skill (base) + Motivation (boost) - Fatigue (malus)
             const avgSkill = assigned.reduce((s, e) => s + e.skillLevel, 0) / assigned.length
-            const totalDifficulty = project.duration * project.teamSize
-            const progressStep = (avgSkill / 10) * dayFraction * (100 / project.duration)
+            const avgMotivation = assigned.reduce((s, e) => s + e.motivation, 0) / assigned.length
+            const avgFatigue = assigned.reduce((s, e) => s + e.fatigue, 0) / assigned.length
+
+            // Calcul du multiplicateur d'efficacité (0.5 à 1.5)
+            const motivationFactor = 0.5 + (avgMotivation / 100) // 0.5 (0 mot.) à 1.5 (100 mot.)
+            const fatigueFactor = 1 - (avgFatigue / 200) // 1.0 (0 fat.) à 0.5 (100 fat.)
+            const efficiency = motivationFactor * fatigueFactor
+
+            const progressStep = (avgSkill / 10) * efficiency * dayFraction * (100 / project.duration)
             project.progress = Math.min(100, project.progress + progressStep)
 
             if (project.progress >= 100) {
@@ -922,16 +929,21 @@ export const useCompanyStore = defineStore('company', {
         id: `${ids[idx]}-${Date.now()}`,
         title: titles[idx],
         description: "Un projet stratégique pour augmenter nos revenus.",
-        duration: 15 + Math.floor(Math.random() * 20),
+        duration: 20 + Math.floor(Math.random() * 30),
         progress: 0,
-        cost: 5000 + Math.floor(Math.random() * 10000),
-        budget: 1000 + Math.floor(Math.random() * 5000),
-        teamSize: 2 + Math.floor(Math.random() * 3),
-        requiredSkills: { tech: 3, sales: 0, creative: 0, hr: 0, management: 2 },
-        reward: 50000 + Math.floor(Math.random() * 100000),
-        penalty: 25000,
+        cost: 10000 + Math.floor(Math.random() * 20000),
+        budget: 5000 + Math.floor(Math.random() * 10000),
+        teamSize: 3 + Math.floor(Math.random() * 4),
+        requiredSkills: { tech: 2, sales: 0, creative: 0, hr: 0, management: 1 },
+        requiredSpecialties: {
+          tech: 2 + Math.floor(Math.random() * 2),
+          creative: Math.random() > 0.5 ? 1 : 0,
+          management: 1
+        },
+        reward: 150000 + Math.floor(Math.random() * 200000),
+        penalty: 50000,
         status: 'pending',
-        shareholderOpinion: 5,
+        shareholderOpinion: 8,
         assignedEmployees: []
       }
 
@@ -940,9 +952,28 @@ export const useCompanyStore = defineStore('company', {
 
     assignEmployeesToProject(projectId: string, employeeIds: number[]) {
       const project = this.activeProjects.find((p: Project) => p.id === projectId)
-      if (project) {
-        project.assignedEmployees = employeeIds
+      if (!project) return
+
+      project.assignedEmployees = employeeIds
+
+      // Validation de la composition de l'équipe
+      const assigned = this.employees.filter(e => employeeIds.includes(e.id))
+
+      let isValid = true
+      const reqSpecs = project.requiredSpecialties
+
+      for (const [spec, count] of Object.entries(reqSpecs)) {
+        const assignedCount = assigned.filter(e => e.specialty === spec).length
+        if (assignedCount < (count as number)) {
+          isValid = false
+          break
+        }
+      }
+
+      if (isValid && assigned.length >= project.teamSize) {
         project.status = 'active'
+      } else {
+        project.status = 'pending' // Reste en attente si incomplet
       }
     },
 

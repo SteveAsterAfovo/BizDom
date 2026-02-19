@@ -262,6 +262,7 @@ export interface Project {
     budget: number         // Budget de fonctionnement
     teamSize: number       // Nombre d'employés requis
     requiredSkills: Record<EmployeeSpecialty, number> // Niveau mini requis
+    requiredSpecialties: Partial<Record<EmployeeSpecialty, number>> // Nombre d'employés requis par spécialité
     reward: number         // Gain en cas de succès
     penalty: number        // Perte en cas d'échec
     status: 'pending' | 'active' | 'completed' | 'failed'
