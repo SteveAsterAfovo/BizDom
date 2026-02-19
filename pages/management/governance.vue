@@ -255,7 +255,7 @@ useHead({
             </div>
 
             <button @click="submitDecision(dec)"
-              :disabled="meetingStatus !== 'idle' || (dec.cost > companyStore.company.cash)"
+              :disabled="meetingStatus !== 'idle' || (dec.cost > companyStore.company.cash) || gameStore.isPaused"
               class="relative z-10 mt-8 w-full btn-primary py-5 rounded-2xl font-black italic text-[10px] uppercase tracking-[0.2em] shadow-glow-accent/20 disabled:opacity-20">
               Convoquer le Collège
             </button>

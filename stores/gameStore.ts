@@ -21,6 +21,8 @@ interface GameStoreState {
   achievements: Achievement[]
   recentAchievement: Achievement | null
   darkMode: boolean
+  isSidebarOpen: boolean
+  isMobileMenuOpen: boolean
 }
 
 export const useGameStore = defineStore('game', {
@@ -38,6 +40,8 @@ export const useGameStore = defineStore('game', {
     achievements: achievementsData.map((a) => ({ ...a })) as Achievement[],
     recentAchievement: null,
     darkMode: true,
+    isSidebarOpen: true,
+    isMobileMenuOpen: false,
   }),
 
   getters: {
@@ -135,11 +139,48 @@ export const useGameStore = defineStore('game', {
     /** Basculer le mode sombre/clair */
     toggleDarkMode() {
       this.darkMode = !this.darkMode
+      localStorage.setItem('bizdom_darkMode', String(this.darkMode))
       if (this.darkMode) {
         document.documentElement.classList.add('dark')
       } else {
         document.documentElement.classList.remove('dark')
       }
+    },
+
+    /** Basculer l'état de la sidebar */
+    toggleSidebar() {
+      this.isSidebarOpen = !this.isSidebarOpen
+      localStorage.setItem('bizdom_sidebarOpen', String(this.isSidebarOpen))
+    },
+
+    /** Initialiser les préférences utilisateur */
+    initializePreferences() {
+      // Dark Mode
+      const savedDark = localStorage.getItem('bizdom_darkMode')
+      if (savedDark !== null) {
+        this.darkMode = savedDark === 'true'
+      } else {
+        // Détection auto si pas de préférence saved
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        this.darkMode = prefersDark
+      }
+
+      if (this.darkMode) {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
+
+      // Sidebar
+      const savedSidebar = localStorage.getItem('bizdom_sidebarOpen')
+      if (savedSidebar !== null) {
+        this.isSidebarOpen = savedSidebar === 'true'
+      }
+    },
+
+    /** Basculer le menu mobile */
+    toggleMobileMenu() {
+      this.isMobileMenuOpen = !this.isMobileMenuOpen
     },
 
     /** Débloquer un achievement */

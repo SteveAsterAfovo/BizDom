@@ -112,7 +112,7 @@ useHead({
               transaction et dilution accélérée.</p>
           </div>
 
-          <button @click="handleSellShares" :disabled="companyStore.ceoShare - sellAmount < 10"
+          <button @click="handleSellShares" :disabled="companyStore.ceoShare - sellAmount < 10 || gameStore.isPaused"
             class="w-full btn-primary py-5 rounded-2xl font-black italic text-[10px] uppercase tracking-[0.2em] shadow-glow-accent/20 disabled:opacity-20">
             Confirmer la Transaction
           </button>
@@ -164,7 +164,7 @@ useHead({
           </div>
 
           <button @click="companyStore.raiseFunds()"
-            :disabled="companyStore.strikeRisk > 40 || companyStore.boardSatisfaction < 50"
+            :disabled="companyStore.strikeRisk > 40 || companyStore.boardSatisfaction < 50 || gameStore.isPaused"
             class="w-full py-5 rounded-2xl font-black italic text-[10px] uppercase tracking-[0.2em] transition-all border-2"
             :class="companyStore.strikeRisk <= 40 && companyStore.boardSatisfaction >= 50
               ? 'bg-accent-600 text-white border-accent-500 hover:shadow-glow-accent'

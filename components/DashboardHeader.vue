@@ -38,59 +38,48 @@ const cycleConfig = computed(() => {
 </script>
 
 <template>
-  <header class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-8 p-1">
-    <!-- Infos de l'entreprise -->
-    <div class="w-full md:w-auto">
-      <div class="flex items-center gap-3 mb-2 flex-wrap">
-        <h1 class="text-3xl font-black italic tracking-tighter uppercase"
-          :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">
-          {{ companyStore.company.name }}
-        </h1>
-        <span class="badge-accent text-[10px] font-black uppercase">{{ gameStore.formattedMonth }}</span>
-        <!-- Badge cycle économique -->
-        <span :class="['text-[10px] font-black uppercase px-2 py-0.5 rounded-md border', cycleConfig.color]">
-          {{ cycleConfig.icon }} {{ cycleConfig.label }}
-        </span>
-      </div>
-      <p class="flex items-center gap-2 flex-wrap text-sm"
-        :class="gameStore.darkMode ? 'text-dark-400' : 'text-slate-500'">
-        <span class="font-bold">Trésorerie :</span>
-        <span :class="companyStore.cash >= 0 ? 'text-gain-500 font-black italic' : 'text-loss-500 font-black italic'">
-          {{ formatCurrency(companyStore.cash) }}
-        </span>
-        <span class="hidden sm:inline text-dark-600">·</span>
-        <span class="font-bold ml-0 sm:ml-0">Part de marché : </span>
-        <span class="text-accent-500 font-black italic">{{ companyStore.playerMarketShare.toFixed(1) }}%</span>
-      </p>
+  <header class="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 p-1">
+    <!-- Contextual Title -->
+    <div>
+      <h2 class="text-2xl font-black italic tracking-tighter uppercase"
+        :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">
+        Pilotage <span class="text-accent-500">& Stratégie</span>
+      </h2>
+      <p class="text-[9px] font-black uppercase tracking-widest text-dark-500 mt-1">Évolutions mensuelles & Décisions
+        critiques</p>
     </div>
 
-    <!-- Actions -->
-    <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
-      <!-- Bouton thème -->
-      <button class="p-3 rounded-2xl transition-all duration-300 border flex items-center justify-center shadow-sm"
-        :class="gameStore.darkMode ? 'bg-dark-850 border-dark-700 text-yellow-400 hover:bg-dark-800' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'"
-        @click="gameStore.toggleDarkMode()" :title="gameStore.darkMode ? 'Mode clair' : 'Mode sombre'">
-        {{ gameStore.darkMode ? '☀️' : '🌙' }}
-      </button>
-
+    <!-- Actions Specific to the Dashboard -->
+    <div class="flex items-center gap-4 w-full sm:w-auto justify-end">
       <!-- Bouton Nouvelle Partie (si game over) -->
-      <button v-if="gameStore.gameOver" class="btn-secondary whitespace-nowrap" @click="resetGame">
+      <button v-if="gameStore.gameOver"
+        class="px-6 py-3.5 rounded-2xl bg-dark-800 text-dark-200 font-black uppercase text-[10px] tracking-widest border border-white/5 hover:bg-dark-700 transition-all"
+        @click="resetGame">
         🔄 Restart
       </button>
 
       <!-- Bouton Passer au mois suivant -->
       <button :class="[
-        'flex-1 md:flex-none relative overflow-hidden font-black uppercase tracking-widest px-8 py-3.5 rounded-2xl transition-all duration-300',
-        'flex items-center justify-center gap-2 text-xs italic',
+        'flex-1 sm:flex-none relative overflow-hidden font-black uppercase tracking-[0.2em] px-10 py-4 rounded-2xl transition-all duration-500 shadow-2xl',
+        'flex items-center justify-center gap-3 text-[11px] italic',
         gameStore.gameOver
-          ? 'bg-dark-700 text-dark-500 cursor-not-allowed opacity-50'
+          ? 'bg-dark-800 text-dark-500 cursor-not-allowed opacity-50'
           : gameStore.isSimulating
             ? 'bg-accent-700 text-accent-200 cursor-wait'
             : 'bg-gradient-to-r from-accent-600 to-accent-500 text-white hover:from-accent-500 hover:to-accent-400 shadow-glow-accent hover:shadow-lg active:scale-[0.97]',
-      ]" :disabled="gameStore.isSimulating || gameStore.gameOver" @click="handleNextMonth">
-        <span v-if="gameStore.isSimulating" class="animate-spin">⏳</span>
-        <span v-else class="text-lg">⏭️</span>
-        {{ gameStore.isSimulating ? 'Processing...' : gameStore.gameOver ? 'KO' : 'Month' }}
+      ]" :disabled="gameStore.isSimulating || gameStore.gameOver || gameStore.isPaused" @click="handleNextMonth">
+
+        <div v-if="!gameStore.isSimulating && !gameStore.gameOver"
+          class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-progress-shine pointer-events-none">
+        </div>
+
+        <span v-if="gameStore.isSimulating" class="animate-spin text-base">⏳</span>
+        <span v-else class="text-xl">⏭️</span>
+
+        <div class="flex flex-col items-start leading-none">
+          <span class="text-[8px] opacity-70 mb-1">Passer au</span>
+          <span>{{ gameStore.isSimulating ? 'Traitement...' : 'Prochain Mois' }}</span>
+        </div>
       </button>
     </div>
   </header>

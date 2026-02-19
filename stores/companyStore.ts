@@ -5,7 +5,7 @@
  */
 import { defineStore } from 'pinia'
 import { useGameStore } from './gameStore'
-import type { Company, Employee, MarketData, RecruitCandidate, Office, Perk, Loan, Competitor, MarketingChannel, EmployeeSpecialty, BoardMember, InfrastructureItem, StrategicDecision, Project, MarketClaim } from '~/types'
+import type { Company, Employee, MarketData, RecruitCandidate, Office, Perk, Loan, Competitor, MarketingChannel, EmployeeSpecialty, BoardMember, InfrastructureItem, StrategicDecision, Project, MarketClaim, TemporaryBoost } from '~/types'
 import infrastructureData from '~/mock/infrastructure.json'
 import companyData from '~/mock/company.json'
 import employeesData from '~/mock/employees.json'
@@ -47,6 +47,7 @@ interface CompanyStoreState {
   pendingDecisions: StrategicDecision[]
   activeProjects: Project[]
   marketClaims: MarketClaim[]
+  temporaryBoosts: TemporaryBoost[]
 }
 
 export const useCompanyStore = defineStore('company', {
@@ -69,6 +70,7 @@ export const useCompanyStore = defineStore('company', {
       },
       sharePrice: 25000,
       sharePriceHistory: [25000],
+      level: 1
     } as Company,
     employees: employeesData.slice(0, 2).map((e) => ({
       ...e,
@@ -85,7 +87,7 @@ export const useCompanyStore = defineStore('company', {
     } as MarketData,
     marketingBudget: 5000,
     recruitPool: RECRUIT_POOL.map((c) => ({ ...c })),
-    offices: officesData.map((o) => ({ ...o })) as Office[],
+    offices: officesData.map((o: any, idx: number) => ({ ...o, minBusinessLevel: idx * 2 })) as Office[],
     availablePerks: perksData.map((p) => ({ ...p })) as Perk[],
     loans: [],
     competitors: competitorsData.map((c) => ({ ...c })) as Competitor[],
@@ -99,13 +101,14 @@ export const useCompanyStore = defineStore('company', {
     infrastructureCatalogue: (infrastructureData as InfrastructureItem[]).map(i => ({ ...i, condition: 100 })),
     pendingDecisions: [],
     activeProjects: [],
-    marketClaims: []
+    marketClaims: [],
+    temporaryBoosts: []
   }),
 
   getters: {
     /** Total des salaires mensuels */
-    totalSalaries: (state): number =>
-      state.employees.reduce((sum, e) => sum + e.salary, 0),
+    totalSalaries: (state: any): number =>
+      state.employees.reduce((sum: number, e: any) => sum + e.salary, 0),
 
     /** Nombre d'employés */
     employeeCount: (state): number =>
@@ -131,15 +134,53 @@ export const useCompanyStore = defineStore('company', {
       if (activeEmployees.length === 0) return 0
 
       const total = activeEmployees.reduce((sum, e) => {
-        const fatiguePenalty = 1 - (e.fatigue / 200) // fatigue 100 = -50% productivité
+        // Bonus Temporaires (Fatigue)
+        const fatigueReduction = state.temporaryBoosts
+          .filter((b: TemporaryBoost) => b.type === 'fatigue')
+          .reduce((sum: number, b: TemporaryBoost) => sum + b.value, 0)
+
+        const effectiveFatigue = Math.max(0, e.fatigue - fatigueReduction)
+        const fatiguePenalty = 1 - (effectiveFatigue / 200) // fatigue 100 = -50% productivité
         return sum + (e.skillLevel * (e.motivation / 100) * fatiguePenalty)
       }, 0)
+
+      // Bonus Temporaires (Motivation)
+      const motivationBoost = state.temporaryBoosts
+        .filter((b: TemporaryBoost) => b.type === 'motivation')
+        .reduce((sum: number, b: TemporaryBoost) => sum + b.value, 0)
 
       // Bonus de spécialité (Management)
       const managers = activeEmployees.filter((e) => e.specialty === 'management')
       const managementBonus = 1 + (managers.length * 0.05)
 
-      return (total / activeEmployees.length) * managementBonus
+      return (total / activeEmployees.length) * managementBonus * (1 + (motivationBoost / 100))
+    },
+
+    /** Motivation globale pondérée (incluant boosts) */
+    globalMotivation: (state: any): number => {
+      if (state.employees.length === 0) return 100
+      const baseAvg = state.employees.reduce((sum: number, e: any) => sum + e.motivation, 0) / state.employees.length
+      const boost = state.temporaryBoosts
+        .filter((b: any) => b.type === 'motivation')
+        .reduce((sum: number, b: any) => sum + b.value, 0)
+      return Math.min(100, baseAvg + boost)
+    },
+
+    /** Fatigue globale pondérée (incluant réductions) */
+    globalFatigue: (state: any): number => {
+      if (state.employees.length === 0) return 0
+      const baseAvg = state.employees.reduce((sum: number, e: any) => sum + e.fatigue, 0) / state.employees.length
+      const reduction = state.temporaryBoosts
+        .filter((b: any) => b.type === 'fatigue')
+        .reduce((sum: number, b: any) => sum + b.value, 0)
+      return Math.max(0, baseAvg - reduction)
+    },
+
+    /** Bonus de motivation total pour UI */
+    totalMotivationBoost: (state: any): number => {
+      return state.temporaryBoosts
+        .filter((b: any) => b.type === 'motivation')
+        .reduce((sum: number, b: any) => sum + b.value, 0)
     },
 
     /** Bonus de spécialisation : vendeurs boostent l'acquisition */
@@ -337,7 +378,6 @@ export const useCompanyStore = defineStore('company', {
     setMarketingBudget(budget: number) {
       this.marketingBudget = Math.max(0, budget)
     },
-
     /** Mettre à jour le cash */
     updateCash(amount: number) {
       this.company.cash += amount
@@ -426,11 +466,30 @@ export const useCompanyStore = defineStore('company', {
 
     // ─── Bureaux ───
 
-    /** Déménager vers un nouveau bureau */
+    /** Déménager vers un nouveau bureau (avec restriction de niveau) */
     upgradeOffice(officeId: number) {
       const office = this.offices.find((o) => o.id === officeId)
       if (!office) return
-      this.company.currentOfficeId = officeId
+
+      // Restriction par niveau
+      if (this.company.level < office.minBusinessLevel) {
+        useGameStore().triggerEvent({
+          id: 998,
+          name: "Prestige Insuffisant",
+          description: `Votre bureau actuel est insuffisant. Ce nouveau siège require le niveau de business ${office.minBusinessLevel}.`,
+          type: "loss",
+          impactValue: 0,
+          icon: "🚫",
+          probability: 1
+        })
+        return
+      }
+
+      const cost = office.rent * 5 // Frais d'installation augmentés
+      if (this.company.cash >= cost) {
+        this.company.cash -= cost
+        this.company.currentOfficeId = officeId
+      }
     },
 
     // ─── Avantages sociaux ───
@@ -448,6 +507,28 @@ export const useCompanyStore = defineStore('company', {
       if (idx !== -1) {
         this.company.activePerks.splice(idx, 1)
       }
+    },
+
+    /** Acheter un boost temporaire */
+    buyBoost(perkId: number, duration: number) {
+      const perk = this.availablePerks.find(p => p.id === perkId)
+      if (!perk) return
+
+      const totalCost = perk.cost * duration
+      if (this.company.cash < totalCost) return
+
+      this.company.cash -= totalCost
+
+      const type = (perk.motivationBoost > 0) ? 'motivation' : 'fatigue'
+      const value = type === 'motivation' ? perk.motivationBoost : perk.fatigueReduction
+
+      this.temporaryBoosts.push({
+        id: `boost-${perkId}-${Date.now()}`,
+        type: type as 'motivation' | 'fatigue',
+        value,
+        remainingDays: duration,
+        cost: totalCost
+      })
     },
 
     // ─── Prêts bancaires ───
@@ -581,6 +662,9 @@ export const useCompanyStore = defineStore('company', {
     applyTick(dayFraction: number) {
       const gameStore = useGameStore()
 
+      // Gérer les appels d'offres (expiration/apparition)
+      this.manageProjectTenders()
+
       // 1. Obsolescence et Usure (mensuelle)
       this.infrastructureCatalogue.forEach(item => {
         if (this.company.ownedInfrastructure.includes(item.id)) {
@@ -589,7 +673,17 @@ export const useCompanyStore = defineStore('company', {
         }
       })
 
-      this.activeProjects.forEach((project: Project) => {
+      // 2. Progression des Projets & Expiration
+      this.activeProjects.forEach((project: Project, idx) => {
+        // Expiration des appels d'offres (pending)
+        if (project.status === 'pending' && project.expiresAt) {
+          if (gameStore.currentMonth > project.expiresAt || (gameStore.currentMonth === project.expiresAt && gameStore.currentDay >= 28)) {
+            // Supprimer le projet expiré
+            this.activeProjects.splice(idx, 1)
+            return
+          }
+        }
+
         if (project.status === 'active') {
           const assigned = this.employees.filter(e => project.assignedEmployees.includes(e.id))
           if (assigned.length > 0) {
@@ -610,6 +704,10 @@ export const useCompanyStore = defineStore('company', {
               project.status = 'completed'
               this.company.cash += project.reward
               this.boardMembers.forEach(m => m.satisfaction = Math.min(100, m.satisfaction + (project.shareholderOpinion || 0)))
+
+              // Progression du niveau
+              this.checkLevelUp()
+
               gameStore.triggerEvent({
                 id: 600,
                 name: "Projet Terminé !",
@@ -746,6 +844,26 @@ export const useCompanyStore = defineStore('company', {
           this.market.customerBase++
         }
       }
+
+      // 4. Gestion des Boosts Temporaires
+      this.temporaryBoosts = this.temporaryBoosts.filter((boost: TemporaryBoost) => {
+        boost.remainingDays -= (dayFraction * 30)
+        return boost.remainingDays > 0
+      })
+
+      // 5. Détérioration des Infrastructures
+      this.infrastructureCatalogue.forEach(item => {
+        if (this.company.ownedInfrastructure.includes(item.id)) {
+          // Détérioration progressive : ~1% par mois (30 jours)
+          const deterioration = (dayFraction * 30) * 0.033
+          item.condition = Math.max(0, item.condition - deterioration)
+        }
+      })
+
+      // 6. Appels d'offres dynamiques (Chance de nouveau projet si < 5 actifs)
+      if (this.activeProjects.length < 5 && Math.random() < (dayFraction * 0.5)) {
+        this.generateProject()
+      }
     },
 
     /** Acheter une infrastructure / équipement */
@@ -832,6 +950,7 @@ export const useCompanyStore = defineStore('company', {
         },
         sharePrice: 25000,
         sharePriceHistory: [25000],
+        level: 1
       } as Company
       this.employees = employeesData.slice(0, 2).map((e) => ({
         ...e,
@@ -928,7 +1047,7 @@ export const useCompanyStore = defineStore('company', {
       const newProject: Project = {
         id: `${ids[idx]}-${Date.now()}`,
         title: titles[idx],
-        description: "Un projet stratégique pour augmenter nos revenus.",
+        description: "Un projet stratégique pour augmenter nos revenus. Attention aux délais !",
         duration: 20 + Math.floor(Math.random() * 30),
         progress: 0,
         cost: 10000 + Math.floor(Math.random() * 20000),
@@ -944,7 +1063,8 @@ export const useCompanyStore = defineStore('company', {
         penalty: 50000,
         status: 'pending',
         shareholderOpinion: 8,
-        assignedEmployees: []
+        assignedEmployees: [],
+        expiresAt: Date.now() + (Math.floor(Math.random() * 3) + 2) * 24 * 60 * 60 * 1000 // 2 à 5 jours
       }
 
       this.activeProjects.push(newProject)
@@ -980,7 +1100,7 @@ export const useCompanyStore = defineStore('company', {
     // ─── MAINTENANCE ───
     repairInfrastructure(itemId: string) {
       const item = this.infrastructureCatalogue.find(i => i.id === itemId)
-      if (item && this.company.cash >= 500) {
+      if (item && item.condition < 100 && this.company.cash >= 500) {
         this.company.cash -= 500
         item.condition = 100
       }
@@ -1175,12 +1295,60 @@ export const useCompanyStore = defineStore('company', {
       if (this.company.sharePriceHistory.length > 24) this.company.sharePriceHistory.shift()
     },
 
-    /** Appliquer la dépréciation du matériel */
+    /** Appliquer la dépréciation du matériel et de l'infrastructure */
     applyDepreciation() {
-      // Simule l'obsolescence après 12 mois sans upgrade majeur
+      // Détérioration infrastructure
+      this.company.ownedInfrastructure.forEach(itemId => {
+        const item = this.infrastructureCatalogue.find(i => i.id === itemId)
+        if (item) {
+          // Perte de 1% à 3% par mois
+          const wear = 1 + Math.random() * 2
+          item.condition = Math.max(0, item.condition - wear)
+        }
+      })
+
       const monthsSinceUpgrade = useGameStore().currentMonth - this.company.lastUpgradeMonth
       if (monthsSinceUpgrade > 12) {
-        // Impact direct sur la productivité (vision simplifiée)
+        // Matériel obsolète : fatigue accrue
+        this.employees.forEach(e => {
+          e.fatigue = Math.min(100, e.fatigue + 2)
+        })
+      }
+    },
+
+    /** Gérer les appels d'offres (expiration et apparition) */
+    manageProjectTenders() {
+      const now = Date.now()
+      // Nettoyage des projets expirés
+      this.activeProjects = this.activeProjects.filter(p => {
+        if (p.status === 'pending' && p.expiresAt && p.expiresAt < now) return false
+        return true
+      })
+
+      // Chance d'apparition d'un nouveau projet (si moins de 3 en attente)
+      const pendingCount = this.activeProjects.filter(p => p.status === 'pending').length
+      if (pendingCount < 3 && Math.random() < 0.1) {
+        this.generateProject()
+      }
+    },
+
+    /** Logique de montée en niveau automatique */
+    checkLevelUp() {
+      const completedCount = this.activeProjects.filter(p => p.status === 'completed').length
+      // Seuil : niveau = floor(projets/3) + 1
+      const newLevel = Math.floor(completedCount / 3) + 1
+
+      if (newLevel > this.company.level) {
+        this.company.level = newLevel
+        useGameStore().triggerEvent({
+          id: 777,
+          name: "Expansion Immobilière",
+          description: `Votre entreprise est maintenant Niveau ${this.company.level} ! De nouveaux bureaux plus spacieux sont disponibles.`,
+          type: "boost",
+          impactValue: 0,
+          icon: "⭐",
+          probability: 1
+        })
       }
     },
 
@@ -1214,6 +1382,6 @@ export const useCompanyStore = defineStore('company', {
           })
         }
       })
-    },
+    }
   },
 })

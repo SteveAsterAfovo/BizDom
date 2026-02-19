@@ -87,7 +87,7 @@ useHead({
           </div>
 
           <button @click="companyStore.upgradeEquipment()"
-            :disabled="!canAfford(50000 * companyStore.company.equipmentLevel)"
+            :disabled="!canAfford(50000 * companyStore.company.equipmentLevel) || gameStore.isPaused"
             class="w-full btn-primary py-5 rounded-2xl font-black italic text-[10px] uppercase tracking-[0.2em] shadow-glow-accent/20 disabled:opacity-20">
             Moderniser ({{ formatCurrency(50000 * companyStore.company.equipmentLevel) }})
           </button>
@@ -175,10 +175,11 @@ useHead({
                     :style="{ width: item.condition + '%' }">
                   </div>
                 </div>
-                <button v-if="item.condition < 100" @click="companyStore.repairInfrastructure(item.id)"
-                  :disabled="!canAfford(500)"
-                  class="mt-2 w-full py-2.5 rounded-xl bg-dark-800/10 border border-dark-700/20 text-[9px] font-black uppercase tracking-widest text-dark-500 hover:text-white hover:bg-accent-600 hover:border-accent-500 transition-all">
-                  🔧 Maintenance (500 FCFA)
+                <button v-if="isOwned(item.id)" @click="companyStore.repairInfrastructure(item.id)"
+                  :disabled="!canAfford(500) || gameStore.isPaused || item.condition >= 100"
+                  class="mt-2 w-full py-2.5 rounded-xl bg-dark-800/10 border border-dark-700/20 text-[9px] font-black uppercase tracking-widest text-dark-500 hover:text-white hover:bg-accent-600 hover:border-accent-500 transition-all disabled:opacity-20">
+                  <span v-if="item.condition >= 100">✨ Parfait État</span>
+                  <span v-else>🔧 Maintenance (500 FCFA)</span>
                 </button>
               </div>
             </div>
@@ -191,8 +192,8 @@ useHead({
                   formatCurrency(item.cost) }}</span>
               </div>
               <button v-if="!isOwned(item.id)" @click="companyStore.purchaseInfrastructure(item.id)"
-                :disabled="!canAfford(item.cost)"
-                class="px-8 py-3.5 rounded-2xl bg-accent-600 text-white font-black italic text-[10px] uppercase tracking-widest hover:shadow-glow-accent transition-all disabled:opacity-30">
+                :disabled="!canAfford(item.cost) || gameStore.isPaused"
+                class="px-8 py-3.5 rounded-2xl bg-accent-600 text-white font-black italic text-[10px] uppercase tracking-widest hover:shadow-glow-accent transition-all disabled:opacity-30 disabled:grayscale">
                 Acquérir
               </button>
               <div v-else class="flex items-center gap-2 text-gain-500 font-black italic text-xs uppercase">

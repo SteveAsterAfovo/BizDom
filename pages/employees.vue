@@ -174,11 +174,13 @@ useHead({
 
             <button :class="[
               'w-full py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] transition-all shadow-md',
-              companyStore.canHireMore
+              companyStore.canHireMore && !gameStore.isPaused
                 ? 'btn-primary shadow-glow-accent/20'
                 : 'bg-dark-800 text-dark-600 border border-white/5 cursor-not-allowed'
-            ]" :disabled="!companyStore.canHireMore" @click="companyStore.hireEmployee(candidate.id)">
-              {{ companyStore.canHireMore ? '➕ Finaliser l\'embauche' : '🔒 Bureau saturé' }}
+            ]" :disabled="!companyStore.canHireMore || gameStore.isPaused"
+              @click="companyStore.hireEmployee(candidate.id)">
+              {{ companyStore.canHireMore ? (gameStore.isPaused ? '⏸ Simulation en Pause' : '➕ Finaliser l\'embauche') :
+              '🔒 Bureau saturé' }}
             </button>
           </div>
         </div>

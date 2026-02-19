@@ -92,7 +92,7 @@ function skillStars(level: number): string {
         <div class="flex justify-between items-center mb-1">
           <span class="text-[9px] font-black uppercase tracking-widest text-dark-500">Expertise</span>
           <span class="text-xs font-black italic text-warn-500 tracking-tight">{{ skillStars(employee.skillLevel)
-            }}</span>
+          }}</span>
         </div>
       </div>
 
@@ -132,13 +132,13 @@ function skillStars(level: number): string {
     <!-- Actions -->
     <div class="flex gap-4">
       <button
-        class="flex-1 py-4 rounded-2xl bg-gain-500/5 text-gain-500 border-2 border-gain-500/20 text-[10px] font-black uppercase tracking-widest hover:bg-gain-500 hover:text-white transition-all active:scale-95"
-        @click="companyStore.raiseSalary(employee.id)">
+        class="flex-1 py-4 rounded-2xl bg-gain-500/5 text-gain-500 border-2 border-gain-500/20 text-[10px] font-black uppercase tracking-widest hover:bg-gain-500 hover:text-white transition-all active:scale-95 disabled:opacity-20 disabled:grayscale"
+        :disabled="gameStore.isPaused" @click="companyStore.raiseSalary(employee.id)">
         💰 Augmenter
       </button>
       <button
-        class="flex-1 py-4 rounded-2xl bg-loss-500/5 text-loss-500 border-2 border-loss-500/20 text-[10px] font-black uppercase tracking-widest hover:bg-loss-500 hover:text-white transition-all active:scale-95"
-        @click="companyStore.fireEmployee(employee.id)">
+        class="flex-1 py-4 rounded-2xl bg-loss-500/5 text-loss-500 border-2 border-loss-500/20 text-[10px] font-black uppercase tracking-widest hover:bg-loss-500 hover:text-white transition-all active:scale-95 disabled:opacity-20 disabled:grayscale"
+        :disabled="gameStore.isPaused" @click="companyStore.fireEmployee(employee.id)">
         ❌ Licencier
       </button>
     </div>

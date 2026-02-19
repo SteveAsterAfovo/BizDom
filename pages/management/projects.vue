@@ -56,6 +56,19 @@ onMounted(() => {
   }
 })
 
+function getTimeLeft(expiresAt?: number) {
+  if (!expiresAt) return ''
+  const diff = expiresAt - Date.now()
+  if (diff <= 0) return 'Expiré'
+
+  const days = Math.floor(diff / (24 * 60 * 60 * 1000))
+  const hours = Math.floor((diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000))
+
+  if (days > 0) return `${days}j ${hours}h`
+  const minutes = Math.floor((diff % (60 * 60 * 1000)) / (60 * 1000))
+  return `${hours}h ${minutes}m`
+}
+
 // SEO
 useHead({
   title: 'Production & Projets',
@@ -76,8 +89,8 @@ useHead({
           Gérez votre backlog et maximisez votre rentabilité opérationnelle
         </p>
       </div>
-      <button @click="companyStore.generateProject()"
-        class="btn-primary px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-glow-accent/20 transition-all active:scale-95">
+      <button @click="companyStore.generateProject()" :disabled="gameStore.isPaused"
+        class="btn-primary px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-glow-accent/20 transition-all active:scale-95 disabled:opacity-20 disabled:grayscale">
         Appel d'offres 📡
       </button>
     </header>
@@ -106,8 +119,15 @@ useHead({
                 project.status === 'pending' ? 'bg-dark-800 text-dark-400 border border-white/5' :
                   'bg-gain-500 text-white'
             ]">
-              {{ project.status === 'active' ? 'Production' : project.status === 'pending' ? 'Attente' : 'Terminé' }}
+              {{ project.status === 'active' ? 'Production' : project.status === 'pending' ? 'Tender' : 'Terminé' }}
             </span>
+          </div>
+
+          <!-- Time Left for Pending Projects -->
+          <div v-if="project.status === 'pending' && project.expiresAt" class="mb-4">
+            <div class="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-loss-500">
+              <span class="animate-pulse">⌛</span> Expire dans : {{ getTimeLeft(project.expiresAt) }}
+            </div>
           </div>
 
           <p class="text-sm font-bold leading-relaxed mb-8"
@@ -197,8 +217,8 @@ useHead({
           </div>
         </div>
 
-        <button v-if="project.status !== 'completed'" @click="openProjectModal(project)"
-          class="w-full py-5 rounded-2xl font-black italic text-[11px] uppercase tracking-[0.2em] transition-all bg-accent-600/5 text-accent-500 border-2 border-accent-500/20 hover:bg-accent-600 hover:text-white hover:border-accent-500 hover:shadow-glow-accent active:scale-95 shadow-lg">
+        <button v-if="project.status !== 'completed'" @click="openProjectModal(project)" :disabled="gameStore.isPaused"
+          class="w-full py-5 rounded-2xl font-black italic text-[11px] uppercase tracking-[0.2em] transition-all bg-accent-600/5 text-accent-500 border-2 border-accent-500/20 hover:bg-accent-600 hover:text-white hover:border-accent-500 hover:shadow-glow-accent active:scale-95 shadow-lg disabled:opacity-20 disabled:grayscale">
           {{ project.assignedEmployees.length > 0 ? 'Gérer le Staff' : 'Assigner une Equipe' }}
         </button>
       </div>
@@ -330,7 +350,10 @@ useHead({
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-dark-700/50 rounded-full;
+  background-color: rgba(64, 64, 64, 0.5);
+  /* Equivalent to bg-dark-700/50 */
+  border-radius: 9999px;
+  /* Equivalent to rounded-full */
 }
 
 .animate-bounce-subtle {

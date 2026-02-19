@@ -69,6 +69,9 @@ export interface Office {
     maxEmployees: number    // capacité maximale
     prestige: number        // 1 à 5
     icon: string
+    requiredScore?: number  // Score global requis
+    requiredRevenue?: number // Revenu mensuel requis
+    minBusinessLevel: number // Niveau d'entreprise requis
 }
 
 /** Avantage social proposé aux employés */
@@ -142,6 +145,7 @@ export interface Company {
     boardSatisfaction: number // 0 à 100
     ownedInfrastructure: string[] // IDs des items possédés
     generalScore: number     // Score global (0-1000)
+    level: number            // Niveau d'entreprise (Business Level)
     sharePrice: number       // Prix d'une part (1%)
     sharePriceHistory: number[]
 }
@@ -251,6 +255,14 @@ export interface Quest {
     failurePenalty: number // Impact cash si échoué
 }
 
+export interface TemporaryBoost {
+    id: string
+    type: 'motivation' | 'fatigue'
+    value: number
+    remainingDays: number
+    cost: number
+}
+
 // ─── Projets & Production ───
 export interface Project {
     id: string
@@ -268,6 +280,7 @@ export interface Project {
     status: 'pending' | 'active' | 'completed' | 'failed'
     shareholderOpinion: number // Influence sur la satisfaction du Board (-10 à +10)
     assignedEmployees: number[] // IDs des employés sur le projet
+    expiresAt?: number // Timestamp ou jour d'expiration (pour les appels d'offres)
 }
 
 // ─── Réclamations Marché ───

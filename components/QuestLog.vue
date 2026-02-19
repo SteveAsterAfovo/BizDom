@@ -1,13 +1,22 @@
 <script setup lang="ts">
-/**
- * ── QuestLog ──
- * Affiche les objectifs en cours et les récompenses
- */
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useQuestStore } from '~/stores/questStore'
 import { useGameStore } from '~/stores/gameStore'
 
 const questStore = useQuestStore()
 const gameStore = useGameStore()
+const router = useRouter()
+
+const localShow = ref(true)
+
+function closeLog() {
+  localShow.value = false
+}
+
+function navigateToQuests() {
+  router.push('/management/quests')
+}
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('fr-FR', {
@@ -18,7 +27,7 @@ function formatCurrency(value: number): string {
 </script>
 
 <template>
-  <div v-if="questStore.hasActiveQuests"
+  <div v-if="questStore.hasActiveQuests && localShow"
     class="fixed bottom-6 right-6 w-full max-w-[20rem] z-50 animate-slide-up px-4 sm:px-0">
 
     <div class="p-5 rounded-[2.5rem] border shadow-2xl backdrop-blur-xl relative overflow-hidden"
@@ -34,6 +43,12 @@ function formatCurrency(value: number): string {
           :class="gameStore.darkMode ? 'text-accent-400' : 'text-accent-600'">
           🎯 Objectifs Stratégiques ({{ questStore.activeQuests.length }})
         </h3>
+        <button @click="closeLog" class="w-6 h-6 rounded-lg flex items-center justify-center transition-all"
+          :class="gameStore.darkMode ? 'hover:bg-white/5 text-dark-400' : 'hover:bg-slate-100 text-slate-400'">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
       </header>
 
       <div class="space-y-4 relative z-10">
@@ -75,11 +90,21 @@ function formatCurrency(value: number): string {
 
             <div v-if="quest.deadline" class="flex items-center gap-1.5">
               <span class="text-[9px] font-black uppercase tracking-widest text-loss-500 italic">⌛ J{{ quest.deadline
-                }}</span>
+              }}</span>
             </div>
           </div>
         </div>
       </div>
+
+      <!-- Global Navigation Button -->
+      <button @click="navigateToQuests"
+        class="mt-6 w-full py-4 rounded-2xl text-[10px] font-black italic uppercase tracking-[0.2em] transition-all hover:scale-[1.02] active:scale-95 shadow-lg border text-center flex items-center justify-center gap-2 group/btn"
+        :class="gameStore.darkMode
+          ? 'bg-accent-500/10 text-accent-400 border-accent-500/30 hover:bg-accent-500/20 hover:shadow-glow-accent/5'
+          : 'bg-accent-50 text-accent-600 border-accent-100 hover:bg-accent-100 shadow-slate-200/50'">
+        <span>Gérer toutes les missions</span>
+        <span class="transition-transform group-hover/btn:translate-x-1">→</span>
+      </button>
     </div>
   </div>
 </template>

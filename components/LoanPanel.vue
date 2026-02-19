@@ -114,8 +114,8 @@ function handleTakeLoan() {
       </div>
 
       <button
-        class="w-full py-5 rounded-2xl bg-accent-500 text-white font-black italic text-[11px] uppercase tracking-[0.2em] shadow-glow-accent hover:scale-[1.02] active:scale-[0.98] transition-all mb-4"
-        @click="handleTakeLoan">
+        class="w-full py-5 rounded-2xl bg-accent-500 text-white font-black italic text-[11px] uppercase tracking-[0.2em] shadow-glow-accent hover:scale-[1.02] active:scale-[0.98] transition-all mb-4 disabled:opacity-30 disabled:grayscale"
+        :disabled="gameStore.isPaused" @click="handleTakeLoan">
         💰 Valider l'emprunt
       </button>
 
