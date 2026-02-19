@@ -4,8 +4,10 @@
  * Affiche les objectifs en cours et les récompenses
  */
 import { useQuestStore } from '~/stores/questStore'
+import { useGameStore } from '~/stores/gameStore'
 
 const questStore = useQuestStore()
+const gameStore = useGameStore()
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('fr-FR', {
@@ -16,43 +18,65 @@ function formatCurrency(value: number): string {
 </script>
 
 <template>
-  <div v-if="questStore.hasActiveQuests" class="fixed bottom-6 right-6 w-80 z-50 animate-slide-up">
-    <div class="card !p-4 !bg-dark-900 border-accent-500/30 shadow-2xl">
-      <h3 class="text-accent-400 font-bold text-sm mb-3 flex items-center gap-2">
-        🎯 Objectifs en cours ({{ questStore.activeQuests.length }})
-      </h3>
+  <div v-if="questStore.hasActiveQuests"
+    class="fixed bottom-6 right-6 w-full max-w-[20rem] z-50 animate-slide-up px-4 sm:px-0">
 
-      <div class="space-y-3">
+    <div class="p-5 rounded-[2.5rem] border shadow-2xl backdrop-blur-xl relative overflow-hidden"
+      :class="gameStore.darkMode ? 'bg-dark-900/90 border-white/5 shadow-glow-accent/5' : 'bg-white/95 border-slate-200 shadow-xl'">
+
+      <!-- Glow effect -->
+      <div v-if="gameStore.darkMode"
+        class="absolute -top-24 -right-24 w-48 h-48 bg-accent-500/10 blur-[60px] rounded-full pointer-events-none">
+      </div>
+
+      <header class="flex items-center justify-between mb-5 relative z-10">
+        <h3 class="text-[10px] font-black italic uppercase tracking-[0.2em] animate-pulse"
+          :class="gameStore.darkMode ? 'text-accent-400' : 'text-accent-600'">
+          🎯 Objectifs Stratégiques ({{ questStore.activeQuests.length }})
+        </h3>
+      </header>
+
+      <div class="space-y-4 relative z-10">
         <div v-for="quest in questStore.activeQuests" :key="quest.id"
-          class="p-3 rounded-xl border transition-all duration-300"
-          :class="quest.completed ? 'bg-gain-500/20 border-gain-500/40' : 'bg-dark-800 border-dark-700/50'">
+          class="group p-4 rounded-[1.5rem] border transition-all duration-300 relative overflow-hidden" :class="[
+            quest.completed
+              ? (gameStore.darkMode ? 'bg-gain-500/10 border-gain-500/20' : 'bg-gain-50 border-gain-200 shadow-glow-gain/5')
+              : (gameStore.darkMode ? 'bg-dark-850 border-white/5' : 'bg-slate-50 border-slate-100 shadow-sm')
+          ]">
 
-          <div class="flex justify-between items-start mb-1">
-            <p class="text-xs font-bold text-white">{{ quest.title }}</p>
-            <span v-if="quest.completed" class="text-xs text-gain-400">✅</span>
+          <div class="flex justify-between items-start mb-2">
+            <h4 class="text-xs font-black italic uppercase tracking-tighter"
+              :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">{{ quest.title }}</h4>
+            <span v-if="quest.completed" class="text-xs animate-bounce">💎</span>
           </div>
-          <p class="text-[10px] text-dark-400 mb-2">{{ quest.description }}</p>
+
+          <p class="text-[10px] font-bold leading-relaxed mb-3"
+            :class="gameStore.darkMode ? 'text-dark-400' : 'text-slate-500'">{{ quest.description }}</p>
 
           <!-- Pros/Cons Shorthand -->
-          <div v-if="!quest.completed" class="mb-3 space-y-1">
+          <div v-if="!quest.completed" class="mb-4 space-y-1.5 px-3 py-2 rounded-xl bg-dark-500/5">
             <div v-for="pro in quest.pros?.slice(0, 1)" :key="pro"
-              class="text-[9px] text-gain-500 font-bold flex items-center gap-1">
-              <span>▲</span> {{ pro }}
+              class="text-[8px] font-black uppercase tracking-widest flex items-center gap-2"
+              :class="gameStore.darkMode ? 'text-gain-400' : 'text-gain-600'">
+              <span class="text-[6px]">▲</span> {{ pro }}
             </div>
             <div v-for="con in quest.cons?.slice(0, 1)" :key="con"
-              class="text-[9px] text-loss-500 font-bold flex items-center gap-1">
-              <span>▼</span> {{ con }}
+              class="text-[8px] font-black uppercase tracking-widest flex items-center gap-2 text-loss-500">
+              <span class="text-[6px]">▼</span> {{ con }}
             </div>
           </div>
 
-          <div class="flex items-center justify-between">
-            <span class="text-[10px] bg-dark-700 px-2 py-0.5 rounded text-dark-300">
+          <div class="flex items-center justify-between pt-2 border-t border-dashed"
+            :class="gameStore.darkMode ? 'border-white/5' : 'border-slate-200'">
+            <div class="px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest"
+              :class="gameStore.darkMode ? 'bg-dark-950 text-dark-300' : 'bg-white text-slate-500 shadow-sm border border-slate-100'">
               {{ quest.rewardType === 'cash' ? formatCurrency(quest.rewardValue) : `+${quest.rewardValue} Motivation` }}
-            </span>
+            </div>
 
-            <span v-if="quest.deadline" class="text-[9px] text-loss-400 font-bold uppercase">
-              ⌛ J{{ quest.deadline }} ({{ formatCurrency(quest.failurePenalty || 0) }})
-            </span>
+            <div v-if="quest.deadline" class="flex items-center gap-1.5">
+              <span class="text-[9px] font-black uppercase tracking-widest text-loss-500 italic">⌛ J{{ quest.deadline
+                }}</span>
+            </div>
           </div>
         </div>
       </div>

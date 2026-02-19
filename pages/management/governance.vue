@@ -4,9 +4,11 @@
  * Interface pour gérer le Conseil d'Administration et les décisions stratégiques
  */
 import { useCompanyStore } from '~/stores/companyStore'
-import type { StrategicDecision, BoardMember } from '~/types'
+import { useGameStore } from '~/stores/gameStore'
+import type { StrategicDecision } from '~/types'
 
 const companyStore = useCompanyStore()
+const gameStore = useGameStore()
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('fr-FR', {
@@ -84,173 +86,192 @@ function getPersonalityLabel(p: string) {
   return labels[p as keyof typeof labels] || p
 }
 
-const buyAmount = ref(1)
-
-function handleBuyShares(memberId: number) {
-  if (companyStore.buyShares(memberId, buyAmount.value)) {
-    // Succès
-  }
-}
-
+// SEO
+useHead({
+  title: 'Gouvernance',
+})
 </script>
 
 <template>
-  <div class="space-y-8 animate-fade-in">
+  <div class="space-y-10 animate-fade-in p-2 sm:p-6 max-w-7xl mx-auto">
     <!-- Header -->
-    <header class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-      <div>
-        <h2 class="text-3xl font-black text-white italic tracking-tighter uppercase">Gouvernance <span
-            class="text-accent-500">& Board</span></h2>
-        <p class="text-dark-400 font-bold uppercase tracking-widest text-xs mt-1">Gérez vos relations avec les
-          investisseurs et le CODIR</p>
+    <header class="flex flex-col xl:flex-row justify-between items-center xl:items-end gap-8 pt-4 sm:pt-0">
+      <div class="text-center xl:text-left">
+        <h2 class="text-3xl sm:text-4xl font-black italic tracking-tighter uppercase mb-2"
+          :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">
+          Gouvernance <span class="text-accent-500">& Board</span>
+        </h2>
+        <p class="text-[10px] font-black uppercase tracking-[0.2em]"
+          :class="gameStore.darkMode ? 'text-dark-400' : 'text-slate-400'">
+          Gérez vos relations avec les investisseurs et le CODIR
+        </p>
       </div>
 
-      <div class="flex gap-4">
-        <!-- General Score Counter -->
-        <div
-          class="bg-dark-900 px-6 py-3 rounded-2xl border-2 border-accent-500/20 flex flex-col items-center min-w-[120px]">
-          <span class="text-[9px] font-black text-accent-500 uppercase tracking-widest mb-1">Score Global</span>
-          <span class="text-2xl font-black text-white italic animate-pulse-slow">{{ companyStore.generalScore }}</span>
+      <div class="flex flex-wrap justify-center gap-4">
+        <!-- Score Global -->
+        <div class="px-8 py-4 rounded-[2rem] border min-w-[140px] text-center shadow-lg"
+          :class="gameStore.darkMode ? 'bg-dark-900 border-accent-500/20 shadow-glow-accent/5' : 'bg-white border-slate-200 shadow-sm'">
+          <span class="text-[9px] font-black text-accent-500 uppercase tracking-widest block mb-1">Score Global</span>
+          <span class="text-2xl font-black italic animate-pulse-slow"
+            :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">{{ companyStore.generalScore }}</span>
         </div>
 
-        <div class="bg-dark-900 px-6 py-3 rounded-2xl border border-white/5 flex items-center gap-4">
-          <span class="text-xs font-black text-dark-500 uppercase">Valeur Part (1%)</span>
-          <span class="text-lg font-black text-gain-400 italic">{{ formatCurrency(companyStore.company.sharePrice)
+        <!-- Valeur Part -->
+        <div class="px-8 py-4 rounded-[2rem] border min-w-[140px] text-center shadow-lg"
+          :class="gameStore.darkMode ? 'bg-dark-900 border-white/5' : 'bg-white border-slate-200 shadow-sm'">
+          <span class="text-[9px] font-black text-dark-500 uppercase tracking-widest block mb-1">Valeur Part (1%)</span>
+          <span class="text-xl font-black italic text-gain-500">{{ formatCurrency(companyStore.company.sharePrice)
           }}</span>
         </div>
 
-        <div class="bg-dark-900 px-6 py-3 rounded-2xl border border-white/5 flex items-center gap-4">
-          <span class="text-xs font-black text-dark-500 uppercase">Satisfaction Board</span>
-          <div class="w-24 h-2 bg-dark-800 rounded-full overflow-hidden">
-            <div class="h-full transition-all duration-1000"
-              :class="companyStore.boardSatisfaction > 50 ? 'bg-gain-500' : 'bg-loss-500'"
+        <!-- Satisfaction Counter -->
+        <div class="px-8 py-4 rounded-[2rem] border min-w-[180px] shadow-lg"
+          :class="gameStore.darkMode ? 'bg-dark-900 border-white/5' : 'bg-white border-slate-200 shadow-sm'">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-[9px] font-black text-dark-500 uppercase tracking-widest">Board Satisfaction</span>
+            <span class="text-sm font-black italic" :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">{{
+              companyStore.boardSatisfaction }}%</span>
+          </div>
+          <div class="w-full h-1.5 bg-dark-700/20 rounded-full overflow-hidden">
+            <div class="h-full transition-all duration-1000 shadow-glow-accent"
+              :class="companyStore.boardSatisfaction > 50 ? 'bg-gain-500 shadow-glow-gain' : 'bg-loss-500 shadow-glow-loss'"
               :style="{ width: companyStore.boardSatisfaction + '%' }"></div>
           </div>
-          <span class="text-sm font-black text-white">{{ companyStore.boardSatisfaction }}%</span>
         </div>
       </div>
     </header>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
       <!-- Board Members List -->
-      <div class="lg:col-span-1 space-y-4">
-        <h3 class="text-xs font-black text-dark-500 uppercase tracking-[0.2em] px-2">Table de l'Actionnariat</h3>
-        <div v-for="member in companyStore.boardMembers" :key="member.id"
-          class="card p-4 flex items-center gap-4 bg-dark-900/50 border-white/5 hover:border-accent-500/30 transition-all group relative overflow-hidden">
+      <div class="lg:col-span-1 space-y-6">
+        <h3 class="text-[10px] font-black text-dark-500 uppercase tracking-[0.3em] px-4">Actionnariat</h3>
+        <div class="space-y-3">
+          <div v-for="member in companyStore.boardMembers" :key="member.id"
+            class="card p-5 flex items-center gap-5 border rounded-[2rem] transition-all hover:scale-[1.02] relative overflow-hidden group shadow-lg"
+            :class="gameStore.darkMode ? 'bg-dark-900 border-white/5 hover:border-accent-500/30' : 'bg-white border-slate-200 hover:border-accent-200 shadow-sm'">
 
-          <!-- Individual Vote Badge -->
-          <div v-if="meetingStatus !== 'idle'"
-            class="absolute inset-0 z-10 flex items-center justify-center backdrop-blur-sm transition-all animate-fade-in">
-            <div v-if="meetingStatus === 'voting'" class="animate-spin text-xl">⏳</div>
-            <div v-else :class="member.lastVote === 'yes' ? 'bg-gain-500 text-white' : 'bg-loss-500 text-white'"
-              class="px-5 py-2 rounded-full font-black text-xs uppercase shadow-2xl">
-              {{ member.lastVote === 'yes' ? 'ACCEPTE ✅' : 'REFUSE ❌' }}
+            <!-- Individual Vote Badge -->
+            <div v-if="meetingStatus !== 'idle'"
+              class="absolute inset-0 z-10 flex items-center justify-center backdrop-blur-md transition-all animate-fade-in bg-dark-950/40">
+              <div v-if="meetingStatus === 'voting'" class="animate-spin text-2xl">⏳</div>
+              <div v-else :class="member.lastVote === 'yes' ? 'bg-gain-600' : 'bg-loss-600'"
+                class="px-6 py-2.5 rounded-full font-black text-[10px] uppercase shadow-2xl text-white tracking-widest border border-white/10">
+                {{ member.lastVote === 'yes' ? 'ACCEPTE ✓' : 'REFUSE ✕' }}
+              </div>
             </div>
-          </div>
 
-          <div
-            class="w-12 h-12 rounded-xl bg-dark-850 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-            {{ member.icon }}
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-black text-white truncate">{{ member.name }}</p>
-            <p class="text-[10px] text-dark-500 font-bold uppercase tracking-wider">{{ member.role }}</p>
-          </div>
-          <div class="text-right">
-            <p class="text-xs font-black text-white italic tracking-tighter">{{ member.sharePercent }}%</p>
-            <p class="text-[9px] text-dark-600 font-bold uppercase">Parts</p>
-          </div>
-          <div class="w-px h-8 bg-white/5"></div>
-          <div class="text-right min-w-[60px]">
-            <p class="text-[10px] font-black uppercase"
-              :class="member.satisfaction > 60 ? 'text-gain-500' : 'text-loss-500'">
-              {{ member.satisfaction }}%
-            </p>
-            <p class="text-[9px] text-dark-600 font-bold uppercase mb-1">{{ getPersonalityLabel(member.personality) }}
-            </p>
-            <button v-if="member.sharePercent > 0" @click="companyStore.buybackShares(member.id)"
-              class="mt-2 px-3 py-1 bg-dark-800 hover:bg-loss-500/20 border border-white/5 hover:border-loss-500/40 rounded-lg text-[8px] font-black uppercase tracking-tighter text-dark-400 hover:text-loss-400 transition-all">
-              💰 Racheter (Parts)
-            </button>
+            <div
+              class="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl transition-transform group-hover:rotate-12"
+              :class="gameStore.darkMode ? 'bg-dark-850 border border-white/5' : 'bg-slate-50 border border-slate-100'">
+              {{ member.icon }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-black italic uppercase tracking-tight truncate"
+                :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">{{ member.name }}</p>
+              <p class="text-[9px] text-dark-500 font-black uppercase tracking-widest">{{ member.role }}</p>
+            </div>
+
+            <div class="text-right">
+              <div class="flex flex-col items-end">
+                <span class="text-xl font-black italic tracking-tighter"
+                  :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">{{ member.sharePercent }}%</span>
+                <span class="text-[8px] font-black text-dark-600 uppercase tracking-widest">Parts</span>
+              </div>
+
+              <div class="mt-2 text-[9px] font-black uppercase tracking-tighter"
+                :class="member.satisfaction > 60 ? 'text-gain-500' : 'text-loss-500'">
+                {{ member.satisfaction }}%
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Strategy & Decisions -->
-      <div class="lg:col-span-2 space-y-4">
-        <h3 class="text-xs font-black text-dark-500 uppercase tracking-[0.2em] px-2">Décisions Stratégiques</h3>
+      <div class="lg:col-span-2 space-y-6">
+        <h3 class="text-[10px] font-black text-dark-500 uppercase tracking-[0.3em] px-4">Directives Stratégiques</h3>
 
         <!-- Decision Result Alert -->
         <Transition name="slide-down">
           <div v-if="meetingStatus !== 'idle'" :class="[
-            'p-4 rounded-2xl border-2 flex items-center gap-4 mb-4',
-            meetingStatus === 'voting' ? 'bg-accent-500/10 border-accent-500/40 text-accent-400' :
-              meetingStatus === 'approved' ? 'bg-gain-500/10 border-gain-500/40 text-gain-400' :
-                'bg-loss-500/10 border-loss-500/40 text-loss-400'
+            'p-6 rounded-[2.5rem] border-2 flex items-center gap-6 shadow-xl transition-all',
+            meetingStatus === 'voting' ? 'bg-accent-500/5 border-accent-500/30 text-accent-500' :
+              meetingStatus === 'approved' ? 'bg-gain-500/5 border-gain-500/30 text-gain-500' :
+                'bg-loss-500/5 border-loss-500/30 text-loss-500'
           ]">
-            <span v-if="meetingStatus === 'voting'" class="animate-spin text-2xl">⏳</span>
-            <span v-if="meetingStatus === 'approved'" class="text-2xl">🗳️</span>
-            <span v-if="meetingStatus === 'rejected'" class="text-2xl">🚫</span>
-            <p class="font-bold uppercase tracking-tight">
+            <span v-if="meetingStatus === 'voting'" class="animate-spin text-3xl">⏳</span>
+            <span v-if="meetingStatus === 'approved'" class="text-3xl">🗳️</span>
+            <span v-if="meetingStatus === 'rejected'" class="text-3xl">🚫</span>
+            <p class="font-black italic uppercase tracking-tighter text-lg">
               {{ meetingStatus === 'voting' ? 'Le Conseil délibère en séance...' : lastDecisionResult }}</p>
           </div>
         </Transition>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div v-for="dec in potentialDecisions" :key="dec.id"
-            class="card p-6 bg-dark-900 border-white/5 flex flex-col justify-between hover:translate-y-[-4px] transition-all relative overflow-hidden group">
-            <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-              <span class="text-6xl font-black italic">{{ dec.title.split(' ').pop() }}</span>
+            class="card p-8 border rounded-[2.5rem] flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] relative overflow-hidden group shadow-lg"
+            :class="gameStore.darkMode ? 'bg-dark-900 border-white/5' : 'bg-white border-slate-200 shadow-sm'">
+
+            <div class="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
+              <span class="text-7xl font-black italic">{{ dec.title.split(' ').pop() }}</span>
             </div>
 
             <div class="relative z-10">
-              <h4 class="text-lg font-black text-white mb-2 italic">{{ dec.title }}</h4>
-              <p class="text-sm text-dark-400 font-medium leading-relaxed mb-6">{{ dec.description }}</p>
+              <h4 class="text-xl font-black italic tracking-tighter uppercase mb-2"
+                :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">{{ dec.title }}</h4>
+              <p class="text-xs font-bold leading-relaxed mb-8"
+                :class="gameStore.darkMode ? 'text-dark-400' : 'text-slate-500'">{{ dec.description }}</p>
 
               <div class="space-y-3">
-                <div class="flex justify-between items-center bg-dark-850/50 p-3 rounded-xl border border-white/5">
-                  <span class="text-[9px] font-black text-dark-500 uppercase">Coût</span>
-                  <span class="text-xs font-black" :class="dec.cost > 0 ? 'text-loss-400' : 'text-gain-400'">
+                <div class="flex justify-between items-center p-4 rounded-2xl border"
+                  :class="gameStore.darkMode ? 'bg-dark-850/50 border-white/5' : 'bg-slate-50 border-slate-100'">
+                  <span class="text-[9px] font-black text-dark-500 uppercase tracking-widest">Coût Direct</span>
+                  <span class="text-sm font-black italic" :class="dec.cost > 0 ? 'text-loss-500' : 'text-gain-500'">
                     {{ dec.cost === 0 ? 'INVEST. BLOQUÉ' : dec.cost.toLocaleString() + ' FCFA' }}
                   </span>
                 </div>
-                <div class="flex justify-between items-center bg-dark-850/50 p-3 rounded-xl border border-white/5">
-                  <span class="text-[9px] font-black text-dark-500 uppercase">Acceptation cible</span>
-                  <div class="flex items-center gap-2">
-                    <div class="w-16 h-1 bg-dark-700 rounded-full overflow-hidden">
-                      <div class="h-full bg-accent-500" :style="{ width: (dec.boardSupport || 50) + '%' }"></div>
+
+                <div class="flex justify-between items-center p-4 rounded-2xl border"
+                  :class="gameStore.darkMode ? 'bg-dark-850/50 border-white/5' : 'bg-slate-50 border-slate-100'">
+                  <span class="text-[9px] font-black text-dark-500 uppercase tracking-widest">Approbation Board</span>
+                  <div class="flex items-center gap-3">
+                    <div class="w-20 h-1.5 bg-dark-700/20 rounded-full overflow-hidden">
+                      <div class="h-full bg-accent-500 shadow-glow-accent"
+                        :style="{ width: (dec.boardSupport || 50) + '%' }"></div>
                     </div>
-                    <span class="text-xs font-black text-white">{{ dec.boardSupport || 50 }}%</span>
+                    <span class="text-xs font-black italic"
+                      :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">{{ dec.boardSupport || 50 }}%</span>
                   </div>
                 </div>
-                <div class="flex justify-between items-center bg-dark-850/50 p-3 rounded-xl border border-white/5">
-                  <span class="text-[9px] font-black text-dark-500 uppercase">Indice de Risque</span>
-                  <span class="text-xs font-black" :class="dec.risk > 0.4 ? 'text-loss-500' : 'text-accent-500'">{{
-                    Math.round(dec.risk * 100) }}%</span>
+
+                <div class="flex justify-between items-center p-4 rounded-2xl border"
+                  :class="gameStore.darkMode ? 'bg-dark-850/50 border-white/5' : 'bg-slate-50 border-slate-100'">
+                  <span class="text-[9px] font-black text-dark-500 uppercase tracking-widest">Indice Corrupt.</span>
+                  <span class="text-sm font-black italic" :class="dec.risk > 0.4 ? 'text-loss-500' : 'text-accent-500'">
+                    {{ Math.round(dec.risk * 100) }}%
+                  </span>
                 </div>
               </div>
             </div>
 
             <button @click="submitDecision(dec)"
               :disabled="meetingStatus !== 'idle' || (dec.cost > companyStore.company.cash)"
-              class="relative z-10 mt-8 w-full py-4 rounded-xl font-black text-xs uppercase tracking-widest transition-all bg-accent-600/10 text-accent-500 border-2 border-accent-500/30 hover:bg-accent-600 hover:text-white hover:border-accent-500 disabled:opacity-30 disabled:grayscale">
+              class="relative z-10 mt-8 w-full btn-primary py-5 rounded-2xl font-black italic text-[10px] uppercase tracking-[0.2em] shadow-glow-accent/20 disabled:opacity-20">
               Convoquer le Collège
             </button>
           </div>
         </div>
       </div>
-
     </div>
   </div>
 </template>
 
 <style scoped>
 .animate-pulse-slow {
-  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-@keyframes pulse {
+@keyframes pulse-slow {
 
   0%,
   100% {
@@ -259,19 +280,19 @@ function handleBuyShares(memberId: number) {
   }
 
   50% {
-    opacity: 0.8;
-    transform: scale(1.05);
+    opacity: 0.85;
+    transform: scale(1.02);
   }
 }
 
 .slide-down-enter-active,
 .slide-down-leave-active {
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .slide-down-enter-from,
 .slide-down-leave-to {
-  transform: translateY(-20px);
+  transform: translateY(-40px);
   opacity: 0;
 }
 </style>

@@ -6,9 +6,11 @@
  */
 import { usePersistence } from '~/composables/usePersistence'
 import { useSimulation } from '~/composables/useSimulation'
+import { useGameStore } from '~/stores/gameStore'
 
 const { hasSavedGame, getSaveInfo, loadGame, deleteSave } = usePersistence()
 const { resetGame } = useSimulation()
+const gameStore = useGameStore()
 
 const showBanner = ref(false)
 const saveInfo = ref<{ month: number; cash: number; savedAt: number } | null>(null)
@@ -47,35 +49,69 @@ function formatDate(timestamp: number): string {
 </script>
 
 <template>
-    <Transition name="banner">
+    <Transition name="banner-slide">
         <div v-if="showBanner && saveInfo"
-            class="mb-6 p-5 rounded-2xl bg-accent-600/10 border border-accent-500/30 animate-fade-in">
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div class="flex items-center gap-4">
-                    <div
-                        class="w-12 h-12 rounded-xl bg-accent-500/20 flex items-center justify-center text-2xl flex-shrink-0">
+            class="mb-8 p-6 rounded-[2.5rem] border backdrop-blur-xl relative overflow-hidden group shadow-2xl"
+            :class="gameStore.darkMode ? 'bg-accent-600/10 border-accent-500/20 shadow-glow-accent/5' : 'bg-white border-slate-200 shadow-xl'">
+
+            <!-- Animated Gradient background -->
+            <div class="absolute inset-0 bg-gradient-to-r from-accent-500/5 via-transparent to-accent-500/5 opacity-50">
+            </div>
+
+            <div class="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6">
+                <div class="flex items-center gap-6 text-center sm:text-left">
+                    <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shadow-xl transition-transform group-hover:scale-110 duration-500"
+                        :class="gameStore.darkMode ? 'bg-dark-900 border border-white/5' : 'bg-slate-50 border border-slate-200'">
                         💾
                     </div>
                     <div>
-                        <p class="text-white font-bold">Partie sauvegardée trouvée</p>
-                        <p class="text-dark-400 text-sm">
-                            Mois {{ saveInfo.month }} · {{ formatCurrency(saveInfo.cash) }} ·
-                            <span class="text-dark-500">{{ formatDate(saveInfo.savedAt) }}</span>
-                        </p>
+                        <h4 class="text-base font-black italic tracking-tighter uppercase"
+                            :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">Sauvegarde système détectée
+                        </h4>
+                        <div class="flex flex-wrap justify-center sm:justify-start items-center gap-3 mt-1.5">
+                            <span class="text-[10px] font-black uppercase tracking-widest text-accent-500 italic">Mois
+                                {{ saveInfo.month }}</span>
+                            <span class="w-1 h-1 rounded-full bg-dark-600"></span>
+                            <span class="text-[10px] font-black uppercase tracking-widest"
+                                :class="gameStore.darkMode ? 'text-dark-400' : 'text-slate-500'">{{
+                                formatCurrency(saveInfo.cash) }}</span>
+                            <span class="hidden sm:inline w-1 h-1 rounded-full bg-dark-600"></span>
+                            <span class="text-[9px] font-bold text-dark-600 uppercase tracking-tighter">{{
+                                formatDate(saveInfo.savedAt) }}</span>
+                        </div>
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <button class="btn-primary text-sm" @click="handleResume">
-                        ▶ Reprendre
+
+                <div class="flex items-center gap-3 w-full sm:w-auto">
+                    <button
+                        class="flex-1 sm:flex-none px-8 py-3.5 rounded-xl font-black italic text-[11px] uppercase tracking-[0.2em] transition-all bg-accent-500 text-white shadow-glow-accent hover:scale-[1.02] active:scale-[0.98]"
+                        @click="handleResume">
+                        Reprendre
                     </button>
-                    <button class="btn-secondary text-sm" @click="handleNewGame">
-                        🔄 Nouvelle Partie
+                    <button
+                        class="flex-1 sm:flex-none px-8 py-3.5 rounded-xl font-black italic text-[11px] uppercase tracking-[0.2em] transition-all border"
+                        :class="gameStore.darkMode ? 'bg-dark-900 border-white/5 text-dark-400 hover:text-white' : 'bg-white border-slate-200 text-slate-500 hover:text-slate-900 shadow-sm'"
+                        @click="handleNewGame">
+                        Nouvelle Partie
                     </button>
                 </div>
             </div>
         </div>
     </Transition>
 </template>
+
+<style scoped>
+.banner-slide-enter-active,
+.banner-slide-leave-active {
+    transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.banner-slide-enter-from,
+.banner-slide-leave-to {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.98);
+}
+</style>
 
 <style scoped>
 .banner-enter-active {

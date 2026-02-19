@@ -38,64 +38,70 @@ const cycleConfig = computed(() => {
 </script>
 
 <template>
-  <header class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+  <header class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-8 p-1">
     <!-- Infos de l'entreprise -->
-    <div>
-      <div class="flex items-center gap-3 mb-1 flex-wrap">
-        <h1 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+    <div class="w-full md:w-auto">
+      <div class="flex items-center gap-3 mb-2 flex-wrap">
+        <h1 class="text-3xl font-black italic tracking-tighter uppercase"
+          :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">
           {{ companyStore.company.name }}
         </h1>
-        <span class="badge-accent text-sm">{{ gameStore.formattedMonth }}</span>
+        <span class="badge-accent text-[10px] font-black uppercase">{{ gameStore.formattedMonth }}</span>
         <!-- Badge cycle économique -->
-        <span :class="['badge text-xs border', cycleConfig.color]">
+        <span :class="['text-[10px] font-black uppercase px-2 py-0.5 rounded-md border', cycleConfig.color]">
           {{ cycleConfig.icon }} {{ cycleConfig.label }}
         </span>
       </div>
-      <p class="text-dark-400 text-sm">
-        Trésorerie :
-        <span :class="companyStore.cash >= 0 ? 'text-gain-400 font-semibold' : 'text-loss-400 font-semibold'">
+      <p class="flex items-center gap-2 flex-wrap text-sm"
+        :class="gameStore.darkMode ? 'text-dark-400' : 'text-slate-500'">
+        <span class="font-bold">Trésorerie :</span>
+        <span :class="companyStore.cash >= 0 ? 'text-gain-500 font-black italic' : 'text-loss-500 font-black italic'">
           {{ formatCurrency(companyStore.cash) }}
         </span>
-        <span class="mx-2 text-dark-600">·</span>
-        <span class="text-dark-500">Part de marché : </span>
-        <span class="text-accent-400 font-semibold">{{ companyStore.playerMarketShare.toFixed(1) }}%</span>
+        <span class="hidden sm:inline text-dark-600">·</span>
+        <span class="font-bold ml-0 sm:ml-0">Part de marché : </span>
+        <span class="text-accent-500 font-black italic">{{ companyStore.playerMarketShare.toFixed(1) }}%</span>
       </p>
     </div>
 
     <!-- Actions -->
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
       <!-- Bouton thème -->
-      <button class="p-2.5 rounded-xl text-dark-400 hover:text-dark-100 hover:bg-dark-800/60 transition-all"
+      <button class="p-3 rounded-2xl transition-all duration-300 border flex items-center justify-center shadow-sm"
+        :class="gameStore.darkMode ? 'bg-dark-850 border-dark-700 text-yellow-400 hover:bg-dark-800' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'"
         @click="gameStore.toggleDarkMode()" :title="gameStore.darkMode ? 'Mode clair' : 'Mode sombre'">
         {{ gameStore.darkMode ? '☀️' : '🌙' }}
       </button>
 
       <!-- Bouton Nouvelle Partie (si game over) -->
-      <button v-if="gameStore.gameOver" class="btn-secondary" @click="resetGame">
-        🔄 Nouvelle Partie
+      <button v-if="gameStore.gameOver" class="btn-secondary whitespace-nowrap" @click="resetGame">
+        🔄 Restart
       </button>
 
       <!-- Bouton Passer au mois suivant -->
       <button :class="[
-        'relative overflow-hidden font-bold px-6 py-3 rounded-xl transition-all duration-300',
-        'flex items-center gap-2 text-sm',
+        'flex-1 md:flex-none relative overflow-hidden font-black uppercase tracking-widest px-8 py-3.5 rounded-2xl transition-all duration-300',
+        'flex items-center justify-center gap-2 text-xs italic',
         gameStore.gameOver
-          ? 'bg-dark-700 text-dark-500 cursor-not-allowed'
+          ? 'bg-dark-700 text-dark-500 cursor-not-allowed opacity-50'
           : gameStore.isSimulating
             ? 'bg-accent-700 text-accent-200 cursor-wait'
             : 'bg-gradient-to-r from-accent-600 to-accent-500 text-white hover:from-accent-500 hover:to-accent-400 shadow-glow-accent hover:shadow-lg active:scale-[0.97]',
       ]" :disabled="gameStore.isSimulating || gameStore.gameOver" @click="handleNextMonth">
         <span v-if="gameStore.isSimulating" class="animate-spin">⏳</span>
-        <span v-else>⏭️</span>
-        {{ gameStore.isSimulating ? 'Simulation...' : gameStore.gameOver ? 'Faillite !' : 'Mois Prochain' }}
+        <span v-else class="text-lg">⏭️</span>
+        {{ gameStore.isSimulating ? 'Processing...' : gameStore.gameOver ? 'KO' : 'Month' }}
       </button>
     </div>
   </header>
 
   <!-- Alerte Game Over -->
   <div v-if="gameStore.gameOver"
-    class="mb-6 p-4 rounded-2xl bg-loss-600/20 border border-loss-500/30 text-loss-300 animate-fade-in">
-    <p class="font-bold text-lg">💀 Faillite !</p>
-    <p class="text-sm mt-1">Votre entreprise n'a plus de fonds. Cliquez sur "Nouvelle Partie" pour recommencer.</p>
+    class="mb-8 p-6 rounded-3xl bg-loss-600/10 border border-loss-500/30 text-loss-500 animate-slide-up flex flex-col sm:flex-row items-center gap-4">
+    <div class="w-12 h-12 rounded-2xl bg-loss-500 flex items-center justify-center text-white text-2xl">💀</div>
+    <div class="text-center sm:text-left">
+      <p class="font-black uppercase tracking-tighter italic text-xl">Game Over : Faillite !</p>
+      <p class="text-sm font-bold opacity-80 mt-1">Votre entreprise a épuisé ses fonds stratégiques.</p>
+    </div>
   </div>
 </template>

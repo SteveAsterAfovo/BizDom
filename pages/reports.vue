@@ -44,155 +44,155 @@ const stats = computed(() => {
 
 // SEO
 useHead({
-  title: 'Rapports — BIZDOM',
+  title: 'Rapports',
 })
 </script>
 
 <template>
-  <div>
+  <div class="max-w-7xl mx-auto space-y-12 animate-fade-in p-1">
     <!-- Header -->
-    <div class="mb-8">
-      <h1 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-        📈 Rapports Mensuels
+    <header class="text-center sm:text-left">
+      <h1 class="text-3xl sm:text-4xl font-black italic tracking-tighter uppercase mb-2"
+        :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">
+        📈 Rapports d'Activité
       </h1>
-      <p class="text-dark-400 text-sm mt-1">
-        Historique complet de la performance de votre entreprise
+      <p class="text-[10px] font-black uppercase tracking-[0.3em]"
+        :class="gameStore.darkMode ? 'text-dark-400' : 'text-slate-400'">
+        Analyse de performance & Historique financier
       </p>
-    </div>
+    </header>
 
     <!-- ── Mois en cours (Estimation) ── -->
-    <div v-if="gameStore.currentMonth > 0" class="mb-12">
-      <div class="flex items-center gap-3 mb-6">
+    <section v-if="gameStore.currentMonth > 0" class="space-y-6">
+      <div class="flex items-center gap-3">
         <div class="w-1.5 h-6 bg-accent-500 rounded-full"></div>
-        <h2 class="text-xl font-black text-white italic uppercase tracking-tight">Mois en cours (Estimations)</h2>
+        <h2 class="text-xl font-black italic uppercase tracking-tight"
+          :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">Projection du Mois</h2>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div class="p-6 rounded-3xl bg-dark-900 border border-white/5">
-          <p class="text-[10px] text-dark-500 font-black uppercase mb-1">Cash Actuel</p>
-          <p class="text-xl font-black text-white italic">{{ formatCurrency(companyStore.company.cash) }}</p>
-        </div>
-        <div class="p-6 rounded-3xl bg-dark-900 border border-white/5">
-          <p class="text-[10px] text-dark-500 font-black uppercase mb-1">Revenu Estimé</p>
-          <p class="text-xl font-black text-gain-400 italic">~ {{ formatCurrency(companyStore.market.customerBase *
-            companyStore.company.revenuePerCustomer * companyStore.productivity) }}</p>
-        </div>
-        <div class="p-6 rounded-3xl bg-dark-900 border border-white/5">
-          <p class="text-[10px] text-dark-500 font-black uppercase mb-1">Dépenses Fixes</p>
-          <p class="text-xl font-black text-loss-400 italic">{{ formatCurrency(companyStore.company.fixedCosts +
-            companyStore.officeRent) }}</p>
-        </div>
-        <div class="p-6 rounded-3xl bg-dark-900 border border-white/5">
-          <p class="text-[10px] text-dark-500 font-black uppercase mb-1">Probabilité Grève</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div v-for="projection in ([
+          { label: 'Trésorerie Actuelle', value: formatCurrency(companyStore.company.cash), color: 'text-white' },
+          { label: 'Revenu Estimé', value: `≈ ${formatCurrency(companyStore.market.customerBase * companyStore.company.revenuePerCustomer * companyStore.productivity)}`, color: 'text-gain-500' },
+          { label: 'Charges Fixes', value: formatCurrency(companyStore.company.fixedCosts + companyStore.officeRent), color: 'text-loss-500' },
+          { label: 'Risque de Grève', value: `${companyStore.strikeRisk.toFixed(1)}%`, color: companyStore.strikeRisk > 50 ? 'text-loss-500' : 'text-accent-500' },
+        ])" :key="projection.label" class="p-8 rounded-[2rem] border shadow-lg transition-transform hover:scale-[1.02]"
+          :class="gameStore.darkMode ? 'bg-dark-900 border-white/5' : 'bg-white border-slate-200 shadow-sm'">
+          <p class="text-[9px] font-black uppercase tracking-widest text-dark-500 mb-2">{{ projection.label }}</p>
           <p class="text-xl font-black italic"
-            :class="companyStore.strikeRisk > 50 ? 'text-loss-500' : 'text-accent-400'">{{
-              companyStore.strikeRisk.toFixed(1) }}%</p>
+            :class="[projection.color === 'text-white' && !gameStore.darkMode ? 'text-slate-900' : projection.color]">
+            {{ projection.value }}
+          </p>
         </div>
       </div>
-    </div>
+    </section>
 
     <!-- État vide -->
-    <div v-if="gameStore.reports.length === 0" class="card text-center py-16">
-      <p class="text-5xl mb-4">📊</p>
-      <p class="text-dark-300 text-lg font-medium">Aucun rapport disponible</p>
-      <p class="text-dark-500 text-sm mt-2">
-        Retournez au dashboard et cliquez sur "Mois suivant" pour générer votre premier rapport.
+    <div v-if="gameStore.reports.length === 0"
+      class="text-center py-24 rounded-[3rem] border border-dashed border-dark-700/30"
+      :class="gameStore.darkMode ? 'bg-dark-900/20' : 'bg-slate-50/50'">
+      <p class="text-6xl mb-6">📊</p>
+      <p class="font-black italic uppercase tracking-tighter text-2xl text-dark-500">Aucun rapport archivé</p>
+      <p class="text-xs font-bold text-dark-400 mt-2 uppercase tracking-widest">
+        Bouclez votre premier mois pour voir les données apparaître.
       </p>
-      <NuxtLink to="/" class="btn-primary inline-block mt-6">
+      <NuxtLink to="/" class="btn-primary inline-block mt-8 px-10 py-4 rounded-2xl">
         ← Retour au Dashboard
       </NuxtLink>
     </div>
 
     <template v-else>
       <!-- ── Résumé Global ── -->
-      <div v-if="stats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-        <div class="card text-center">
-          <p class="text-xs text-dark-400 mb-1">Mois joués</p>
-          <p class="text-2xl font-bold text-accent-400">{{ stats.months }}</p>
+      <section v-if="stats" class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <div v-for="stat in ([
+          { label: 'Cycles Joués', value: stats.months, color: 'text-accent-500' },
+          { label: 'CA Cumulé', value: formatCurrency(stats.totalRevenue), color: 'text-gain-500' },
+          { label: 'Bénéfice Net', value: formatCurrency(stats.totalProfit), color: stats.totalProfit >= 0 ? 'text-gain-500' : 'text-loss-500' },
+          { label: 'Taxes Versées', value: formatCurrency(stats.totalTaxes), color: 'text-warn-500' },
+          { label: 'Efficience Moy.', value: `${(stats.avgProductivity * 100).toFixed(0)}%`, color: 'text-accent-500' },
+        ])" :key="stat.label" class="card p-5 text-center rounded-3xl border"
+          :class="gameStore.darkMode ? 'bg-dark-900 border-white/5' : 'bg-white border-slate-100 shadow-sm'">
+          <p class="text-[8px] font-black uppercase tracking-widest text-dark-500 mb-1">{{ stat.label }}</p>
+          <p class="text-base font-black italic uppercase" :class="stat.color">{{ stat.value }}</p>
         </div>
-        <div class="card text-center">
-          <p class="text-xs text-dark-400 mb-1">Revenus cumulés</p>
-          <p class="text-lg font-bold text-gain-400">{{ formatCurrency(stats.totalRevenue) }}</p>
-        </div>
-        <div class="card text-center">
-          <p class="text-xs text-dark-400 mb-1">Profit net cumulé</p>
-          <p :class="['text-lg font-bold', stats.totalProfit >= 0 ? 'text-gain-400' : 'text-loss-400']">
-            {{ formatCurrency(stats.totalProfit) }}
-          </p>
-        </div>
-        <div class="card text-center">
-          <p class="text-xs text-dark-400 mb-1">Impôts payés</p>
-          <p class="text-lg font-bold text-warn-400">{{ formatCurrency(stats.totalTaxes) }}</p>
-        </div>
-        <div class="card text-center">
-          <p class="text-xs text-dark-400 mb-1">Productivité moy.</p>
-          <p class="text-2xl font-bold text-accent-400">{{ (stats.avgProductivity * 100).toFixed(0) }}%</p>
-        </div>
-      </div>
+      </section>
 
       <!-- ── Graphiques ── -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
-        <LineChart title="💰 Trésorerie" :labels="gameStore.monthLabels" :datasets="[
-          { label: 'Trésorerie', data: gameStore.cashHistory, borderColor: '#6366f1' },
-        ]" />
-        <LineChart title="📊 Profit net" :labels="gameStore.monthLabels" :datasets="[
-          { label: 'Profit net', data: gameStore.netProfitHistory, borderColor: '#f59e0b' },
-        ]" />
-        <LineChart title="😊 Satisfaction" :labels="gameStore.monthLabels" :datasets="[
-          { label: 'Satisfaction', data: gameStore.satisfactionHistory, borderColor: '#10b981' },
-        ]" />
-      </div>
+      <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div v-for="chart in ([
+          { title: '💰 Trésorerie', data: gameStore.cashHistory, color: '#6366f1' },
+          { title: '📊 Profit net', data: gameStore.netProfitHistory, color: '#f59e0b' },
+          { title: '😊 Satisfaction', data: gameStore.satisfactionHistory, color: '#10b981' },
+        ])" :key="chart.title" class="p-6 rounded-[2.5rem] border"
+          :class="gameStore.darkMode ? 'bg-dark-900 border-white/5' : 'bg-white border-slate-200 shadow-sm'">
+          <LineChart :title="chart.title" :labels="gameStore.monthLabels" :datasets="[
+            { label: chart.title.substring(2), data: chart.data, borderColor: chart.color },
+          ]" />
+        </div>
+      </section>
 
       <!-- ── Tableau détaillé ── -->
-      <div class="card overflow-hidden mb-8">
-        <h3 class="text-white font-bold text-lg mb-4">📋 Tableau de synthèse</h3>
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
+      <section class="card p-8 rounded-[2.5rem] border shadow-xl overflow-hidden"
+        :class="gameStore.darkMode ? 'bg-dark-900 border-white/5' : 'bg-white border-slate-200 shadow-sm'">
+        <div class="flex items-center gap-3 mb-8">
+          <div class="w-1.5 h-6 bg-accent-500 rounded-full"></div>
+          <h3 class="text-xl font-black italic uppercase tracking-tight text-white"
+            :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">Synthèse Chronologique</h3>
+        </div>
+
+        <div class="overflow-x-auto -mx-8">
+          <table class="w-full text-[11px] font-bold uppercase tracking-tight">
             <thead>
-              <tr class="border-b border-dark-700/50">
-                <th class="text-left py-3 px-3 text-dark-400 font-medium">Mois</th>
-                <th class="text-right py-3 px-3 text-dark-400 font-medium">Revenus</th>
-                <th class="text-right py-3 px-3 text-dark-400 font-medium">Charges</th>
-                <th class="text-right py-3 px-3 text-dark-400 font-medium">Profit</th>
-                <th class="text-right py-3 px-3 text-dark-400 font-medium">Impôts</th>
-                <th class="text-right py-3 px-3 text-dark-400 font-medium">Net</th>
-                <th class="text-right py-3 px-3 text-dark-400 font-medium">Cash</th>
-                <th class="text-center py-3 px-3 text-dark-400 font-medium">Événement</th>
+              <tr class="border-b"
+                :class="gameStore.darkMode ? 'border-white/5 bg-white/5' : 'border-slate-100 bg-slate-50'">
+                <th class="py-4 px-6 text-left text-dark-500">Mois</th>
+                <th class="py-4 px-6 text-right text-dark-500">Revenus</th>
+                <th class="py-4 px-6 text-right text-dark-500">Dépenses</th>
+                <th class="py-4 px-6 text-right text-dark-500">Bénéfice</th>
+                <th class="py-4 px-6 text-right text-dark-500">Taxes</th>
+                <th class="py-4 px-6 text-right text-dark-500">Net</th>
+                <th class="py-4 px-6 text-right text-dark-500 font-black">Cash</th>
+                <th class="py-4 px-6 text-center text-dark-500">Evt</th>
               </tr>
             </thead>
-            <tbody>
-              <tr v-for="report in sortedReports" :key="report.month"
-                class="border-b border-dark-700/20 hover:bg-dark-800/50 transition-colors">
-                <td class="py-3 px-3 text-white font-medium">Mois {{ report.month }}</td>
-                <td class="py-3 px-3 text-right text-gain-400">{{ formatCurrency(report.revenue) }}</td>
-                <td class="py-3 px-3 text-right text-loss-400">{{ formatCurrency(report.totalExpenses)
-                }}</td>
-                <td
-                  :class="['py-3 px-3 text-right font-medium', report.profit >= 0 ? 'text-gain-400' : 'text-loss-400']">
+            <tbody class="divide-y" :class="gameStore.darkMode ? 'divide-white/5' : 'divide-slate-50'">
+              <tr v-for="report in sortedReports" :key="report.month" class="transition-colors"
+                :class="gameStore.darkMode ? 'hover:bg-white/5' : 'hover:bg-slate-50'">
+                <td class="py-4 px-6 italic" :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">Mois {{
+                  report.month }}</td>
+                <td class="py-4 px-6 text-right text-gain-500">{{ formatCurrency(report.revenue) }}</td>
+                <td class="py-4 px-6 text-right text-loss-500">{{ formatCurrency(report.totalExpenses) }}</td>
+                <td class="py-4 px-6 text-right italic" :class="report.profit >= 0 ? 'text-gain-500' : 'text-loss-500'">
                   {{ formatCurrency(report.profit) }}
                 </td>
-                <td class="py-3 px-3 text-right text-dark-300">{{ formatCurrency(report.taxes) }}</td>
-                <td
-                  :class="['py-3 px-3 text-right font-bold', report.netProfit >= 0 ? 'text-gain-400' : 'text-loss-400']">
+                <td class="py-4 px-6 text-right text-warn-500">{{ formatCurrency(report.taxes) }}</td>
+                <td class="py-4 px-6 text-right font-black italic"
+                  :class="report.netProfit >= 0 ? 'text-gain-500 border-r-2 border-gain-500/20' : 'text-loss-500 border-r-2 border-loss-500/20'">
                   {{ formatCurrency(report.netProfit) }}
                 </td>
-                <td class="py-3 px-3 text-right text-white">{{ formatCurrency(report.cashAfter) }}</td>
-                <td class="py-3 px-3 text-center">
+                <td class="py-4 px-6 text-right font-black italic"
+                  :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">{{ formatCurrency(report.cashAfter) }}
+                </td>
+                <td class="py-4 px-6 text-center text-xl">
                   <span v-if="report.event" :title="report.event.name">{{ report.event.icon }}</span>
-                  <span v-else class="text-dark-600">—</span>
+                  <span v-else class="text-dark-700 opacity-20">—</span>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
       <!-- ── Détails des rapports (cartes) ── -->
-      <div>
-        <h3 class="text-white font-bold text-lg mb-4">📄 Détails par mois</h3>
-        <div class="space-y-3">
+      <section class="space-y-6">
+        <div class="flex items-center gap-3">
+          <div class="w-1.5 h-6 bg-accent-500 rounded-full"></div>
+          <h2 class="text-xl font-black italic uppercase tracking-tight"
+            :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">Archives Détaillées</h2>
+        </div>
+        <div class="space-y-6">
           <MonthlyReport v-for="report in sortedReports" :key="'detail-' + report.month" :report="report" />
         </div>
-      </div>
+      </section>
     </template>
   </div>
 </template>

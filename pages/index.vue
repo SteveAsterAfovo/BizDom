@@ -37,7 +37,7 @@ const recentEvents = computed(() =>
 
 // SEO
 useHead({
-  title: 'Dashboard — BIZDOM',
+  title: 'Dashboard',
 })
 </script>
 
@@ -53,7 +53,7 @@ useHead({
     <SaveGameBanner />
 
     <!-- ── KPI Cards ── -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
       <FinancialCard title="Trésorerie" :value="formatCurrency(companyStore.cash)" icon="💰"
         :trend="companyStore.cash >= 100000 ? 'up' : companyStore.cash > 0 ? 'neutral' : 'down'"
         :subtitle="companyStore.cash < 0 ? 'Risque de faillite !' : 'Trésorerie saine'" />
@@ -68,7 +68,7 @@ useHead({
     </div>
 
     <!-- ── Graphiques ── -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
       <LineChart title="📈 Évolution de la trésorerie" :labels="gameStore.monthLabels" :datasets="[
         { label: 'Trésorerie', data: gameStore.cashHistory, borderColor: '#6366f1' },
       ]" />
@@ -79,21 +79,28 @@ useHead({
     </div>
 
     <!-- ── BANNIERE DIRECTEUR GENERAL ── -->
-    <NuxtLink to="/dg" class="block mb-8 group">
+    <NuxtLink to="/dg" class="block mb-10 group">
       <div
-        class="p-6 rounded-3xl bg-gradient-to-r from-accent-600/20 via-dark-800 to-dark-900 border border-accent-500/30 flex items-center justify-between hover:border-accent-500/60 transition-all shadow-glow-accent/5">
-        <div class="flex items-center gap-6">
+        class="p-6 sm:p-8 rounded-[2.5rem] bg-gradient-to-r transition-all duration-500 border flex flex-col sm:flex-row items-center justify-between shadow-lg hover:shadow-glow-accent/20"
+        :class="gameStore.darkMode ? 'from-accent-600/20 via-dark-800 to-dark-900 border-accent-500/30' : 'from-accent-50 via-white to-slate-50 border-accent-200'">
+        <div class="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
           <div
-            class="w-16 h-16 rounded-2xl bg-accent-600/20 flex items-center justify-center text-3xl shadow-glow-accent/20 group-hover:scale-110 transition-transform">
+            class="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl transition-transform duration-500 group-hover:scale-110 shadow-sm"
+            :class="gameStore.darkMode ? 'bg-accent-600/20 shadow-glow-accent/20' : 'bg-white border border-accent-100'">
             🏛️
           </div>
           <div>
-            <h2 class="text-xl font-black text-white italic tracking-tight uppercase">Dashboard Stratégique
-              (DG)</h2>
-            <p class="text-xs text-dark-400">Gérez le climat social et anticipez les demandes du marché.</p>
+            <h2 class="text-2xl font-black italic tracking-tighter uppercase"
+              :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">
+              Dashboard Stratégique (DG)
+            </h2>
+            <p class="text-sm font-bold uppercase tracking-widest mt-1"
+              :class="gameStore.darkMode ? 'text-dark-400' : 'text-slate-400'">
+              Gérez le climat social et anticipez le marché.
+            </p>
           </div>
         </div>
-        <div class="text-accent-400 group-hover:translate-x-2 transition-transform">
+        <div class="mt-6 sm:mt-0 text-accent-500 text-2xl group-hover:translate-x-3 transition-transform duration-300">
           ➜
         </div>
       </div>
@@ -109,30 +116,37 @@ useHead({
     </div>
 
     <!-- ── Concurrence & Satisfaction ── -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
       <!-- Concurrents -->
-      <div class="card">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-white font-bold text-lg flex items-center gap-2">
+      <div class="card p-6" :class="gameStore.darkMode ? 'bg-dark-900 border-dark-800' : 'bg-white border-slate-200'">
+        <div class="flex items-center justify-between mb-6 flex-wrap gap-2">
+          <h3 class="font-black italic uppercase tracking-tighter text-xl"
+            :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">
             🏆 Marché & Concurrence
           </h3>
-          <span class="badge-accent">
+          <span class="badge-accent py-1 px-3 text-[10px] uppercase font-black">
             Votre part : {{ companyStore.playerMarketShare.toFixed(1) }}%
           </span>
         </div>
-        <div class="space-y-3">
+        <div class="space-y-4">
           <!-- Part du joueur -->
-          <div class="p-3 rounded-xl bg-accent-500/10 border border-accent-500/20">
-            <div class="flex items-center justify-between mb-2">
-              <div class="flex items-center gap-2">
-                <span class="text-xl">🏅</span>
-                <p class="text-sm font-semibold text-accent-400">{{ companyStore.company.name }}</p>
+          <div class="p-4 rounded-3xl border transition-all duration-300"
+            :class="gameStore.darkMode ? 'bg-accent-500/5 border-accent-500/20 shadow-glow-accent/5' : 'bg-accent-50/50 border-accent-100 shadow-sm'">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-3">
+                <span class="text-2xl">🏅</span>
+                <p class="text-sm font-black uppercase italic"
+                  :class="gameStore.darkMode ? 'text-accent-400' : 'text-accent-600'">
+                  {{ companyStore.company.name || 'Ma Startup' }}
+                </p>
               </div>
-              <p class="text-lg font-bold text-accent-400">{{ companyStore.playerMarketShare.toFixed(1)
-              }}%</p>
+              <p class="text-xl font-black" :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">
+                {{ companyStore.playerMarketShare.toFixed(1) }}%
+              </p>
             </div>
-            <div class="progress-bar">
-              <div class="progress-fill bg-accent-500" :style="{ width: `${companyStore.playerMarketShare}%` }" />
+            <div class="progress-bar h-2">
+              <div class="progress-fill bg-accent-500 shadow-glow-accent"
+                :style="{ width: `${companyStore.playerMarketShare}%` }" />
             </div>
           </div>
           <!-- Concurrents IA -->
@@ -141,73 +155,78 @@ useHead({
       </div>
 
       <!-- Satisfaction & Fatigue -->
-      <div class="card">
-        <h3 class="text-white font-bold text-lg mb-4 flex items-center gap-2">
+      <div class="card p-6" :class="gameStore.darkMode ? 'bg-dark-900 border-dark-800' : 'bg-white border-slate-200'">
+        <h3 class="font-black italic uppercase tracking-tighter text-xl mb-6"
+          :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">
           📊 Indicateurs de santé
         </h3>
-        <div class="space-y-4">
+        <div class="space-y-6">
           <!-- Satisfaction -->
-          <div class="p-4 rounded-xl bg-dark-850 border border-dark-700/30">
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-dark-300 text-sm font-medium">😊 Satisfaction client (NPS)</span>
-              <span :class="[
-                'font-bold text-lg',
-                companyStore.market.satisfaction >= 70 ? 'text-gain-400' :
-                  companyStore.market.satisfaction >= 40 ? 'text-warn-400' : 'text-loss-400'
+          <div class="p-4 rounded-3xl border group"
+            :class="gameStore.darkMode ? 'bg-dark-850 border-dark-700/50' : 'bg-slate-50 border-slate-100'">
+            <div class="flex justify-between items-center mb-3">
+              <span class="text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+                :class="gameStore.darkMode ? 'text-dark-400' : 'text-slate-500'">
+                😊 Satisfaction client (NPS)
+              </span>
+              <span class="font-black italic text-xl" :class="[
+                companyStore.market.satisfaction >= 70 ? 'text-gain-500' :
+                  companyStore.market.satisfaction >= 40 ? 'text-warn-500' : 'text-loss-500'
               ]">
                 {{ companyStore.market.satisfaction }}%
               </span>
             </div>
-            <div class="progress-bar h-3">
+            <div class="progress-bar h-3 bg-dark-700/30 rounded-full overflow-hidden">
               <div :class="[
-                'progress-fill',
-                companyStore.market.satisfaction >= 70 ? 'bg-gain-500' :
-                  companyStore.market.satisfaction >= 40 ? 'bg-warn-500' : 'bg-loss-500'
+                'progress-fill transition-all duration-1000',
+                companyStore.market.satisfaction >= 70 ? 'bg-gain-500 shadow-glow-gain' :
+                  companyStore.market.satisfaction >= 40 ? 'bg-warn-500 shadow-glow-warn' : 'bg-loss-500 shadow-glow-loss'
               ]" :style="{ width: `${companyStore.market.satisfaction}%` }" />
             </div>
-            <p class="text-xs text-dark-500 mt-2">
+            <p class="text-[9px] font-bold uppercase mt-3 tracking-widest text-dark-500">
               Churn : {{ (companyStore.market.churnRate * 100).toFixed(1) }}% des clients perdus/mois
             </p>
           </div>
 
           <!-- Fatigue moyenne -->
-          <div class="p-4 rounded-xl bg-dark-850 border border-dark-700/30">
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-dark-300 text-sm font-medium">😓 Fatigue moyenne</span>
-              <span :class="[
-                'font-bold text-lg',
-                companyStore.averageFatigue <= 30 ? 'text-gain-400' :
-                  companyStore.averageFatigue <= 60 ? 'text-warn-400' : 'text-loss-400'
+          <div class="p-4 rounded-3xl border"
+            :class="gameStore.darkMode ? 'bg-dark-850 border-dark-700/50' : 'bg-slate-50 border-slate-100'">
+            <div class="flex justify-between items-center mb-3">
+              <span class="text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+                :class="gameStore.darkMode ? 'text-dark-400' : 'text-slate-500'">
+                😓 Fatigue moyenne
+              </span>
+              <span class="font-black italic text-xl" :class="[
+                companyStore.averageFatigue <= 30 ? 'text-gain-500' :
+                  companyStore.averageFatigue <= 60 ? 'text-warn-500' : 'text-loss-500'
               ]">
                 {{ companyStore.averageFatigue }}%
               </span>
             </div>
-            <div class="progress-bar h-3">
+            <div class="progress-bar h-3 bg-dark-700/30 rounded-full overflow-hidden">
               <div :class="[
-                'progress-fill',
-                companyStore.averageFatigue <= 30 ? 'bg-gain-500' :
-                  companyStore.averageFatigue <= 60 ? 'bg-warn-500' : 'bg-loss-500'
+                'progress-fill transition-all duration-1000',
+                companyStore.averageFatigue <= 30 ? 'bg-gain-500 shadow-glow-gain' :
+                  companyStore.averageFatigue <= 60 ? 'bg-warn-500 shadow-glow-warn' : 'bg-loss-500 shadow-glow-loss'
               ]" :style="{ width: `${companyStore.averageFatigue}%` }" />
             </div>
-            <p class="text-xs text-dark-500 mt-2">
-              Activez des avantages sociaux pour réduire la fatigue
-            </p>
           </div>
 
           <!-- Achievements rapide -->
-          <div class="p-4 rounded-xl bg-dark-850 border border-dark-700/30">
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-dark-300 text-sm font-medium">🏆 Succès</span>
-              <span class="font-bold text-lg text-warn-400">
+          <div class="p-4 rounded-3xl border border-dashed border-accent-500/30">
+            <div class="flex justify-between items-center mb-3">
+              <span class="text-[10px] font-black uppercase text-accent-500 tracking-widest">🏆 Progression
+                Succès</span>
+              <span class="font-black italic text-xl text-accent-500">
                 {{ gameStore.unlockedCount }}/{{ gameStore.achievements.length }}
               </span>
             </div>
-            <div class="progress-bar h-3">
-              <div class="progress-fill bg-warn-500" :style="{ width: `${gameStore.achievementProgress}%` }" />
+            <div class="progress-bar h-1.5 bg-accent-500/10">
+              <div class="progress-fill bg-accent-500" :style="{ width: `${gameStore.achievementProgress}%` }" />
             </div>
             <NuxtLink to="/achievements"
-              class="text-xs text-accent-400 hover:text-accent-300 mt-2 inline-block transition-colors">
-              Voir tous les succès →
+              class="text-[9px] font-black uppercase text-accent-500 hover:text-accent-400 mt-3 inline-block transition-colors tracking-widest italic group">
+              Détails des trophées <span class="group-hover:translate-x-1 inline-block transition-transform">→</span>
             </NuxtLink>
           </div>
         </div>
@@ -215,29 +234,33 @@ useHead({
     </div>
 
     <!-- ── Événements récents ── -->
-    <div class="card">
-      <h3 class="text-white font-bold text-lg mb-4 flex items-center gap-2">
+    <div class="card p-6" :class="gameStore.darkMode ? 'bg-dark-900 border-dark-800' : 'bg-white border-slate-200'">
+      <h3 class="font-black italic uppercase tracking-tighter text-xl mb-6"
+        :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">
         🔔 Événements récents
       </h3>
 
-      <div v-if="recentEvents.length === 0" class="text-dark-500 text-sm py-4 text-center">
-        Aucun événement pour le moment.<br />
-        Simulez un mois pour commencer !
+      <div v-if="recentEvents.length === 0"
+        class="text-dark-500 font-bold uppercase text-[10px] py-8 text-center bg-slate-50/50 dark:bg-dark-850/30 rounded-[2rem] border border-dashed border-dark-700/20">
+        Aucun événement archivé.<br />
+        Veuillez simuler un cycle.
       </div>
 
-      <div v-else class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div v-for="event in recentEvents" :key="event.id + '-' + Math.random()" :class="[
-          'p-3 rounded-xl border transition-all duration-200',
-          event.type === 'gain' ? 'bg-gain-500/5 border-gain-500/20' :
-            event.type === 'loss' ? 'bg-loss-500/5 border-loss-500/20' :
-              event.type === 'boost' ? 'bg-accent-500/5 border-accent-500/20' :
-                'bg-warn-500/5 border-warn-500/20'
+      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div v-for="event in recentEvents" :key="event.id" :class="[
+          'p-4 rounded-2xl border transition-all duration-300 hover:scale-[1.02] shadow-sm',
+          event.type === 'gain' ? (gameStore.darkMode ? 'bg-gain-500/5 border-gain-500/20' : 'bg-gain-50 border-gain-100') :
+            event.type === 'loss' ? (gameStore.darkMode ? 'bg-loss-500/5 border-loss-500/20' : 'bg-loss-50 border-loss-100') :
+              event.type === 'boost' ? (gameStore.darkMode ? 'bg-accent-500/5 border-accent-500/20' : 'bg-accent-50 border-accent-100') :
+                (gameStore.darkMode ? 'bg-warn-500/5 border-warn-500/20' : 'bg-warn-50 border-warn-100')
         ]">
-          <div class="flex items-center gap-2">
-            <span class="text-lg">{{ event.icon }}</span>
-            <div>
-              <p class="text-sm font-medium text-white">{{ event.name }}</p>
-              <p class="text-xs text-dark-400">{{ event.description }}</p>
+          <div class="flex items-center gap-4">
+            <span class="text-3xl filter drop-shadow-sm">{{ event.icon }}</span>
+            <div class="min-w-0">
+              <p class="text-sm font-black uppercase truncate italic"
+                :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">{{ event.name }}</p>
+              <p class="text-xs font-bold truncate" :class="gameStore.darkMode ? 'text-dark-400' : 'text-slate-500'">{{
+                event.description }}</p>
             </div>
           </div>
         </div>
