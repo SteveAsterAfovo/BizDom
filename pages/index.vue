@@ -55,15 +55,16 @@ useHead({
     <!-- ── KPI Cards ── -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
       <FinancialCard title="Trésorerie" :value="formatCurrency(companyStore.cash)" icon="💰"
-        :trend="companyStore.cash >= 100000 ? 'up' : companyStore.cash > 0 ? 'neutral' : 'down'" />
+        :trend="companyStore.cash >= 100000 ? 'up' : companyStore.cash > 0 ? 'neutral' : 'down'"
+        :subtitle="companyStore.cash < 0 ? 'Risque de faillite !' : 'Trésorerie saine'" />
       <FinancialCard title="Profit du mois" :value="lastProfit" icon="📊" :trend="profitTrend"
-        :subtitle="companyStore.company.investorShare > 0 ? `Equity : ${((1 - companyStore.company.investorShare) * 100).toFixed(0)}%` : (gameStore.lastReport ? `Mois ${gameStore.lastReport.month}` : 'Aucun rapport')" />
+        :subtitle="companyStore.company.investorShare > 0 ? `Equity : ${((1 - companyStore.company.investorShare) * 100).toFixed(0)}%` : (gameStore.lastReport ? `Variation : ${((gameStore.lastReport.netProfit / (gameStore.reports[gameStore.reports.length - 2]?.netProfit || 1)) * 100).toFixed(0)}%` : 'Aucun rapport')" />
       <FinancialCard title="Employés"
         :value="`${companyStore.employeeCount}/${companyStore.currentOffice.maxEmployees}`" icon="👥" trend="neutral"
-        :subtitle="`Productivité : ${(companyStore.productivity * 100).toFixed(0)}%`" />
-      <FinancialCard title="Clients" :value="companyStore.market.customerBase" icon="🎯"
+        :subtitle="companyStore.strikeRisk > 30 ? `⚠️ Risque grève: ${companyStore.strikeRisk.toFixed(0)}%` : `Productivité : ${(companyStore.productivity * 100).toFixed(0)}%`" />
+      <FinancialCard title="Clients" :value="Math.max(0, companyStore.market.customerBase)" icon="🎯"
         :trend="companyStore.estimatedNewCustomers > 0 ? 'up' : 'neutral'"
-        :subtitle="`Satisfaction : ${companyStore.market.satisfaction}%`" />
+        :subtitle="`Churn : ${(companyStore.market.churnRate * 100).toFixed(1)}%`" />
     </div>
 
     <!-- ── Graphiques ── -->

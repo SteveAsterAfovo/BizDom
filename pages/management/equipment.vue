@@ -140,6 +140,20 @@ function getMissingDeps(deps: string[]) {
                 </div>
               </div>
 
+              <!-- État / Dépréciation -->
+              <div v-if="isOwned(item.id)" class="mb-4 space-y-2">
+                <div class="flex justify-between text-[9px] font-black uppercase">
+                  <span class="text-dark-500">État : {{ item.condition }}%</span>
+                  <span :class="item.condition > 80 ? 'text-gain-500' : 'text-loss-500'">
+                    {{ item.condition > 80 ? 'Optimal' : 'Usé' }}
+                  </span>
+                </div>
+                <div class="w-full h-1 bg-dark-800 rounded-full overflow-hidden">
+                  <div class="h-full bg-gain-500" :style="{ width: item.condition + '%' }"></div>
+                </div>
+              </div>
+
+
               <div v-if="item.risky" class="p-2 rounded-lg bg-orange-500/10 border border-orange-500/30 mb-4">
                 <p class="text-[8px] font-black text-orange-500 uppercase">⚠️ Risque de panne : {{
                   Math.round((item.failureRate || 0) * 100) }}%</p>

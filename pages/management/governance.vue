@@ -8,6 +8,13 @@ import type { StrategicDecision, BoardMember } from '~/types'
 
 const companyStore = useCompanyStore()
 
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'decimal',
+    maximumFractionDigits: 0,
+  }).format(value) + ' FCFA'
+}
+
 // Décisions mockées pour la démo
 const potentialDecisions: StrategicDecision[] = [
   {
@@ -76,6 +83,15 @@ function getPersonalityLabel(p: string) {
   const labels = { conservative: 'Prudent', aggressive: 'Audacieux', balanced: 'Équilibré' }
   return labels[p as keyof typeof labels] || p
 }
+
+const buyAmount = ref(1)
+
+function handleBuyShares(memberId: number) {
+  if (companyStore.buyShares(memberId, buyAmount.value)) {
+    // Succès
+  }
+}
+
 </script>
 
 <template>
@@ -98,8 +114,14 @@ function getPersonalityLabel(p: string) {
         </div>
 
         <div class="bg-dark-900 px-6 py-3 rounded-2xl border border-white/5 flex items-center gap-4">
+          <span class="text-xs font-black text-dark-500 uppercase">Valeur Part (1%)</span>
+          <span class="text-lg font-black text-gain-400 italic">{{ formatCurrency(companyStore.company.sharePrice)
+          }}</span>
+        </div>
+
+        <div class="bg-dark-900 px-6 py-3 rounded-2xl border border-white/5 flex items-center gap-4">
           <span class="text-xs font-black text-dark-500 uppercase">Satisfaction Board</span>
-          <div class="w-32 h-2 bg-dark-800 rounded-full overflow-hidden">
+          <div class="w-24 h-2 bg-dark-800 rounded-full overflow-hidden">
             <div class="h-full transition-all duration-1000"
               :class="companyStore.boardSatisfaction > 50 ? 'bg-gain-500' : 'bg-loss-500'"
               :style="{ width: companyStore.boardSatisfaction + '%' }"></div>
@@ -140,12 +162,17 @@ function getPersonalityLabel(p: string) {
             <p class="text-[9px] text-dark-600 font-bold uppercase">Parts</p>
           </div>
           <div class="w-px h-8 bg-white/5"></div>
-          <div class="text-right min-w-[40px]">
+          <div class="text-right min-w-[60px]">
             <p class="text-[10px] font-black uppercase"
               :class="member.satisfaction > 60 ? 'text-gain-500' : 'text-loss-500'">
               {{ member.satisfaction }}%
             </p>
-            <p class="text-[9px] text-dark-600 font-bold uppercase">{{ getPersonalityLabel(member.personality) }}</p>
+            <p class="text-[9px] text-dark-600 font-bold uppercase mb-1">{{ getPersonalityLabel(member.personality) }}
+            </p>
+            <button v-if="member.sharePercent > 0" @click="handleBuyShares(member.id)"
+              class="text-[8px] font-black text-accent-500 border border-accent-500/30 px-2 py-0.5 rounded hover:bg-accent-500 hover:text-white transition-all">
+              RACHAT (1%)
+            </button>
           </div>
         </div>
       </div>

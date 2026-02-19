@@ -4,6 +4,7 @@
  * bureaux, avantages sociaux, prêts, concurrence et canaux marketing
  */
 import { defineStore } from 'pinia'
+import { useGameStore } from './gameStore'
 import type { Company, Employee, MarketData, RecruitCandidate, Office, Perk, Loan, Competitor, MarketingChannel, EmployeeSpecialty, BoardMember, InfrastructureItem, StrategicDecision } from '~/types'
 import infrastructureData from '~/mock/infrastructure.json'
 import companyData from '~/mock/company.json'
@@ -57,6 +58,15 @@ export const useCompanyStore = defineStore('company', {
       boardSatisfaction: 75,
       ownedInfrastructure: ['pwr-standard', 'net-4g', 'ws-pc-eco'],
       generalScore: 100,
+      ceo: {
+        firstName: 'Steve',
+        lastName: 'Aster',
+        gender: 'M',
+        appearance: 'casual-1',
+        bankBalance: 5000,
+      },
+      sharePrice: 25000,
+      sharePriceHistory: [25000],
     } as Company,
     employees: employeesData.slice(0, 2).map((e) => ({
       ...e,
@@ -253,7 +263,19 @@ export const useCompanyStore = defineStore('company', {
       const boardScore = state.company.boardSatisfaction * 2
 
       return Math.min(1000, Math.round(cashScore + employeesScore + motivationScore + equipmentScore + boardScore))
-    }
+    },
+
+    /** Capacité de remboursement estimée (30% du revenu) */
+    loanRepaymentCapacity(): number {
+      const revenue = this.market.customerBase * this.company.revenuePerCustomer * this.productivity
+      return revenue * 0.3
+    },
+
+    /** Fortune nette du CEO (Cash + Valeur des parts) */
+    ceoNetWorth(): number {
+      const sharesValue = (1 - this.company.investorShare) * 100 * this.company.sharePrice
+      return (this.company.ceo?.bankBalance || 0) + sharesValue
+    },
   },
 
   actions: {
@@ -429,6 +451,13 @@ export const useCompanyStore = defineStore('company', {
     takeLoan(amount: number, months: number = 12) {
       const interestRate = 0.03 // 3% mensuel
       const monthlyPayment = Math.round((amount * (1 + interestRate * months)) / months)
+
+      // Logique de rejet de prêt
+      if (this.totalLoanPayments + monthlyPayment > this.loanRepaymentCapacity) {
+        return false
+      }
+      if (this.company.cash < -50000) return false
+
       this.loans.push({
         id: this.nextLoanId++,
         amount,
@@ -438,6 +467,7 @@ export const useCompanyStore = defineStore('company', {
         totalPaid: 0,
       })
       this.company.cash += amount
+      return true
     },
 
     /** Rembourser les prêts mensuellement (appelé dans la simulation) */
@@ -742,7 +772,16 @@ export const useCompanyStore = defineStore('company', {
         isConfigured: false,
         boardSatisfaction: 75,
         ownedInfrastructure: ['pwr-standard', 'net-4g', 'ws-pc-eco'],
-        generalScore: 100
+        generalScore: 100,
+        ceo: {
+          firstName: 'Steve',
+          lastName: 'Aster',
+          gender: 'M',
+          appearance: 'casual-1',
+          bankBalance: 5000,
+        },
+        sharePrice: 25000,
+        sharePriceHistory: [25000],
       } as Company
       this.employees = employeesData.slice(0, 2).map((e) => ({
         ...e,
@@ -877,13 +916,15 @@ export const useCompanyStore = defineStore('company', {
         high_motivation: ["J'adore ce projet !", "On va conquérir le monde.", "Fier d'être dans l'équipe."],
         perks: ["Merci pour les avantages !", "Le café est super.", "Les bureaux sont cools."],
         training: ["Cette formation m'a ouvert les yeux.", "Je me sens plus fort !"],
-        neutral: ["Journée normale au bureau.", "Tout roule.", "Concentré sur mes tâches."]
+        neutral: ["Journée normale au bureau.", "Tout roule.", "Concentré sur mes tâches."],
+        threat: ["Menace : Si ça ne s'améliore pas, je propose un débrayage.", "Revendication : Mon salaire n'est plus compétitif."],
       }
 
       let category: keyof typeof feedbacks = 'neutral'
       if (emp.isOnStrike) category = 'high_fatigue'
       else if (emp.fatigue > 70) category = 'high_fatigue'
-      else if (emp.motivation < 30) category = 'low_motivation'
+      else if (emp.motivation < 30) category = 'threat'
+      else if (emp.motivation < 45) category = 'low_motivation'
       else if (emp.motivation > 85) category = 'high_motivation'
       else if (this.company.activePerks.length > 2 && Math.random() < 0.3) category = 'perks'
       else if (emp.trainingDaysRemaining > 0) category = 'training'
@@ -891,8 +932,99 @@ export const useCompanyStore = defineStore('company', {
       const msg = feedbacks[category][Math.floor(Math.random() * feedbacks[category].length)]
 
       if (!emp.opinions) emp.opinions = []
-      emp.opinions.unshift(`[J${Math.floor(Date.now() / 1000) % 30}] ${msg}`)
+      emp.opinions.unshift(`[Mois ${useGameStore().currentMonth}] ${msg}`)
       if (emp.opinions.length > 5) emp.opinions.pop()
-    }
+    },
+
+    // ── Actions d'Actionnariat ──
+
+    /** Racheter les parts d'un actionnaire */
+    buyShares(memberId: number, percent: number) {
+      const member = this.boardMembers.find(m => m.id === memberId)
+      if (!member || !this.company.ceo) return false
+
+      const cost = percent * this.company.sharePrice
+      if (this.company.ceo.bankBalance < cost) return false
+      if (member.sharePercent < percent) return false
+
+      this.company.ceo.bankBalance -= cost
+      member.sharePercent -= percent
+      this.company.investorShare -= (percent / 100)
+
+      if (member.sharePercent <= 0) {
+        this.boardMembers = this.boardMembers.filter(m => m.id !== memberId)
+      }
+      return true
+    },
+
+    /** Vendre des parts au Board (le CEO récupère du cash perso) */
+    sellShares(percent: number) {
+      if (!this.company.ceo) return false
+      const currentCeoShare = (1 - this.company.investorShare) * 100
+      if (currentCeoShare - percent < 10) return false // Le CEO doit garder 10%
+
+      const gain = percent * this.company.sharePrice * 0.9 // 10% de frais de transaction
+      this.company.ceo.bankBalance += gain
+      this.company.investorShare += (percent / 100)
+
+      // Dilution chez les investisseurs existants
+      const major = this.boardMembers[0]
+      if (major) {
+        major.sharePercent += percent
+      }
+      return true
+    },
+
+    /** Mettre à jour le cours de l'action (basé sur la performance) */
+    updateSharePrice() {
+      const baseValue = 25000
+      const performanceFactor = Math.max(0.5, 1 + (this.company.cash / 500000))
+      const growthFactor = 0.5 + (this.market.satisfaction / 100)
+
+      this.company.sharePrice = Math.round(baseValue * performanceFactor * growthFactor)
+      this.company.sharePriceHistory.push(this.company.sharePrice)
+      if (this.company.sharePriceHistory.length > 24) this.company.sharePriceHistory.shift()
+    },
+
+    /** Appliquer la dépréciation du matériel */
+    applyDepreciation() {
+      // Simule l'obsolescence après 12 mois sans upgrade majeur
+      const monthsSinceUpgrade = useGameStore().currentMonth - this.company.lastUpgradeMonth
+      if (monthsSinceUpgrade > 12) {
+        // Impact direct sur la productivité (vision simplifiée)
+      }
+    },
+
+    /** Actions autonomes des actionnaires (si insatisfaits ou opportunistes) */
+    runAutonomousBoardDecisions() {
+      this.boardMembers.forEach(member => {
+        // Un actionnaire insatisfait (> 15% parts) peut tenter une pression
+        if (member.satisfaction < 30 && member.sharePercent > 15 && Math.random() < 0.2) {
+          useGameStore().triggerEvent({
+            id: 200 + member.id,
+            name: `Pression de ${member.name}`,
+            description: `${member.name} exige une réduction immédiate des coûts opérationnels.`,
+            probability: 1,
+            type: 'loss',
+            impactValue: 5000,
+            icon: '👔'
+          })
+          member.satisfaction += 10 // Il se sent entendu
+        }
+
+        // Un actionnaire très content peut injecter un petit bonus
+        if (member.satisfaction > 90 && Math.random() < 0.05) {
+          useGameStore().triggerEvent({
+            id: 300 + member.id,
+            name: `Cadeau de ${member.name}`,
+            description: `Ravi des performances, ${member.name} offre un bonus à la trésorerie.`,
+            probability: 1,
+            type: 'gain',
+            impactValue: 10000,
+            icon: '🎁'
+          })
+        }
+      })
+    },
   },
 })

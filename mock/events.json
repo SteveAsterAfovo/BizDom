@@ -88,5 +88,32 @@
         "type": "gain",
         "impactValue": 20000,
         "icon": "💎"
+    },
+    {
+        "id": 11,
+        "name": "Sabotage Interne",
+        "description": "Un acte de sabotage a endommagé vos infrastructures. Réparations coûteuses.",
+        "probability": 0.05,
+        "type": "loss",
+        "impactValue": 25000,
+        "icon": "🧨"
+    },
+    {
+        "id": 12,
+        "name": "Contrôle Qualité DG",
+        "description": "Les autorités sanitaires/techniques imposent une mise à jour immédiate.",
+        "probability": 0.04,
+        "type": "loss",
+        "impactValue": 15000,
+        "icon": "🚔"
+    },
+    {
+        "id": 13,
+        "name": "Hausse du Loyer",
+        "description": "Votre bailleur augmente drastiquement le loyer de vos bureaux.",
+        "probability": 0.05,
+        "type": "fixed_cost_increase",
+        "impactValue": 5000,
+        "icon": "🏢"
     }
 ]

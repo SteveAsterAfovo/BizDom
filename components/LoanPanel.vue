@@ -10,6 +10,8 @@ const companyStore = useCompanyStore()
 // Formulaire de prêt
 const loanAmount = ref(50000)
 const loanMonths = ref(12)
+const errorMsg = ref('')
+
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('fr-FR').format(value) + ' FCFA'
@@ -27,10 +29,16 @@ const totalInterest = computed(() => {
 })
 
 function handleTakeLoan() {
+  errorMsg.value = ''
   if (loanAmount.value > 0 && loanMonths.value > 0) {
-    companyStore.takeLoan(loanAmount.value, loanMonths.value)
+    const success = companyStore.takeLoan(loanAmount.value, loanMonths.value)
+    if (!success) {
+      errorMsg.value = 'Prêt refusé : Capacité de remboursement insuffisante ou trésorerie trop critique.'
+      setTimeout(() => errorMsg.value = '', 5000)
+    }
   }
 }
+
 </script>
 
 <template>
@@ -81,10 +89,19 @@ function handleTakeLoan() {
         </div>
       </div>
 
-      <button class="w-full btn-primary text-sm" @click="handleTakeLoan">
+      <button class="w-full btn-primary text-sm mb-3" @click="handleTakeLoan">
         💰 Emprunter {{ formatCurrency(loanAmount) }}
       </button>
+
+      <!-- Message d'erreur -->
+      <Transition name="fade">
+        <div v-if="errorMsg"
+          class="p-2 rounded bg-loss-500/10 border border-loss-500/30 text-loss-400 text-[10px] text-center font-bold uppercase italic">
+          {{ errorMsg }}
+        </div>
+      </Transition>
     </div>
+
 
     <!-- Prêts en cours -->
     <div v-if="companyStore.loans.length > 0">

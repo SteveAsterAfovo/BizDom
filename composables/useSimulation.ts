@@ -98,6 +98,14 @@ export function useSimulation() {
         case 'boost':
           companyStore.boostAllSkills(event.impactValue)
           break
+        case 'fixed_cost_increase':
+          companyStore.company.fixedCosts += event.impactValue
+          break
+        case 'sabotage':
+          // Perte de motivation + perte cash
+          companyStore.employees.forEach(e => e.motivation -= 10)
+          eventImpact = -event.impactValue
+          break
       }
     }
 
@@ -110,6 +118,11 @@ export function useSimulation() {
 
     // ─── 16. Mettre à jour les concurrents IA ───
     companyStore.updateCompetitors()
+
+    // ─── 16.5 Mettre à jour la finance stratégique ───
+    companyStore.updateSharePrice()
+    companyStore.applyDepreciation()
+    companyStore.runAutonomousBoardDecisions()
 
     // ─── 17. Générer le rapport mensuel ───
     const report: MonthlyReport = {

@@ -55,13 +55,13 @@ useHead({
         { key: 'recruit', label: '📋 Recruter', count: companyStore.recruitPool.length },
         { key: 'perks', label: '🎁 Avantages' },
       ] as const)" :key="tab.key" :class="[
-              'px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200',
-              activeTab === tab.key
-                ? 'bg-accent-600 text-white shadow-glow-accent'
-                : 'bg-dark-800 text-dark-400 hover:text-dark-200 hover:bg-dark-700',
-            ]" @click="activeTab = tab.key">
+        'px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200',
+        activeTab === tab.key
+          ? 'bg-accent-600 text-white shadow-glow-accent'
+          : 'bg-dark-800 text-dark-400 hover:text-dark-200 hover:bg-dark-700',
+      ]" @click="activeTab = tab.key">
         {{ tab.label }}
-        <span v-if="tab.count !== undefined" class="ml-1 text-xs opacity-60">({{ tab.count }})</span>
+        <span v-if="'count' in tab && tab.count !== undefined" class="ml-1 text-xs opacity-60">({{ tab.count }})</span>
       </button>
     </div>
 

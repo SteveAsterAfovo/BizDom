@@ -11,7 +11,8 @@ export interface CEO {
     firstName: string
     lastName: string
     gender: 'M' | 'F' | 'NB'
-    appearance: string // Slug ou ID d'avatar
+    appearance: string
+    bankBalance: number    // Fortune personnelle (cash)
 }
 
 // ─── Cycles économiques ───
@@ -56,6 +57,8 @@ export interface InfrastructureItem {
     description: string
     risky?: boolean        // Est-ce une proposition dangereuse ?
     failureRate?: number   // Risque de panne
+    condition: number      // État de l'équipement (0 à 100)
+    depreciationRate: number // Perte de condition par mois (%)
 }
 
 // ─── Bureaux / espace de travail ───
@@ -139,6 +142,8 @@ export interface Company {
     boardSatisfaction: number // 0 à 100
     ownedInfrastructure: string[] // IDs des items possédés
     generalScore: number     // Score global (0-1000)
+    sharePrice: number       // Prix d'une part (1%)
+    sharePriceHistory: number[]
 }
 
 /** Employé de l'entreprise */
@@ -179,7 +184,7 @@ export interface GameEvent {
     name: string
     description: string
     probability: number       // 0 à 1
-    type: 'loss' | 'gain' | 'employee_departure' | 'boost'
+    type: 'loss' | 'gain' | 'employee_departure' | 'boost' | 'sabotage' | 'fixed_cost_increase'
     impactValue: number
     icon: string
 }

@@ -4,8 +4,10 @@
  * Historique mensuel : tableau, graphiques, indicateurs de performance
  */
 import { useGameStore } from '~/stores/gameStore'
+import { useCompanyStore } from '~/stores/companyStore'
 
 const gameStore = useGameStore()
+const companyStore = useCompanyStore()
 
 // Formater montant
 function formatCurrency(value: number): string {
@@ -56,6 +58,36 @@ useHead({
       <p class="text-dark-400 text-sm mt-1">
         Historique complet de la performance de votre entreprise
       </p>
+    </div>
+
+    <!-- ── Mois en cours (Estimation) ── -->
+    <div v-if="gameStore.currentMonth > 0" class="mb-12">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-1.5 h-6 bg-accent-500 rounded-full"></div>
+        <h2 class="text-xl font-black text-white italic uppercase tracking-tight">Mois en cours (Estimations)</h2>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="p-6 rounded-3xl bg-dark-900 border border-white/5">
+          <p class="text-[10px] text-dark-500 font-black uppercase mb-1">Cash Actuel</p>
+          <p class="text-xl font-black text-white italic">{{ formatCurrency(companyStore.company.cash) }}</p>
+        </div>
+        <div class="p-6 rounded-3xl bg-dark-900 border border-white/5">
+          <p class="text-[10px] text-dark-500 font-black uppercase mb-1">Revenu Estimé</p>
+          <p class="text-xl font-black text-gain-400 italic">~ {{ formatCurrency(companyStore.market.customerBase *
+            companyStore.company.revenuePerCustomer * companyStore.productivity) }}</p>
+        </div>
+        <div class="p-6 rounded-3xl bg-dark-900 border border-white/5">
+          <p class="text-[10px] text-dark-500 font-black uppercase mb-1">Dépenses Fixes</p>
+          <p class="text-xl font-black text-loss-400 italic">{{ formatCurrency(companyStore.company.fixedCosts +
+            companyStore.officeRent) }}</p>
+        </div>
+        <div class="p-6 rounded-3xl bg-dark-900 border border-white/5">
+          <p class="text-[10px] text-dark-500 font-black uppercase mb-1">Probabilité Grève</p>
+          <p class="text-xl font-black italic"
+            :class="companyStore.strikeRisk > 50 ? 'text-loss-500' : 'text-accent-400'">{{
+              companyStore.strikeRisk.toFixed(1) }}%</p>
+        </div>
+      </div>
     </div>
 
     <!-- État vide -->
