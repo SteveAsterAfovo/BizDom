@@ -250,3 +250,32 @@ export interface Quest {
     cons: string[]    // Inconvénients/Risques si ignoré/échoué
     failurePenalty: number // Impact cash si échoué
 }
+
+// ─── Projets & Production ───
+export interface Project {
+    id: string
+    title: string
+    description: string
+    duration: number       // Durée en jours
+    progress: number       // 0 à 100
+    cost: number           // Coût de lancement
+    budget: number         // Budget de fonctionnement
+    teamSize: number       // Nombre d'employés requis
+    requiredSkills: Record<EmployeeSpecialty, number> // Niveau mini requis
+    reward: number         // Gain en cas de succès
+    penalty: number        // Perte en cas d'échec
+    status: 'pending' | 'active' | 'completed' | 'failed'
+    shareholderOpinion: number // Influence sur la satisfaction du Board (-10 à +10)
+    assignedEmployees: number[] // IDs des employés sur le projet
+}
+
+// ─── Réclamations Marché ───
+export interface MarketClaim {
+    id: string
+    type: 'price' | 'quality' | 'support' | 'feature'
+    description: string
+    intensity: number      // Impact sur le churn (0-1)
+    status: 'pending' | 'resolved'
+    actionLabel: string
+    actionCost: number
+}

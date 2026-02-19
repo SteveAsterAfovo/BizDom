@@ -169,9 +169,9 @@ function handleBuyShares(memberId: number) {
             </p>
             <p class="text-[9px] text-dark-600 font-bold uppercase mb-1">{{ getPersonalityLabel(member.personality) }}
             </p>
-            <button v-if="member.sharePercent > 0" @click="handleBuyShares(member.id)"
-              class="text-[8px] font-black text-accent-500 border border-accent-500/30 px-2 py-0.5 rounded hover:bg-accent-500 hover:text-white transition-all">
-              RACHAT (1%)
+            <button v-if="member.sharePercent > 0" @click="companyStore.buybackShares(member.id)"
+              class="mt-2 px-3 py-1 bg-dark-800 hover:bg-loss-500/20 border border-white/5 hover:border-loss-500/40 rounded-lg text-[8px] font-black uppercase tracking-tighter text-dark-400 hover:text-loss-400 transition-all">
+              💰 Racheter (Parts)
             </button>
           </div>
         </div>

@@ -29,12 +29,29 @@ const avatars = [
   { id: 'cyber', label: 'Coder', icon: '👨‍💻' },
 ]
 
+onMounted(() => {
+  const saved = localStorage.getItem('bizdom_save_v1')
+  if (saved) {
+    const data = JSON.parse(saved)
+    if (data.company?.isConfigured) {
+      // Charger les données si nécessaire ou simplement rediriger
+      router.push('/')
+    }
+  }
+})
+
 function finishOnboarding() {
   if (!form.companyName || !form.ceo.firstName) return
 
   companyStore.company.name = form.companyName
   companyStore.company.ceo = { ...form.ceo }
   companyStore.company.isConfigured = true
+
+  // Sauvegarder l'état initial
+  localStorage.setItem('bizdom_save_v1', JSON.stringify({
+    company: companyStore.company,
+    employees: companyStore.employees
+  }))
 
   router.push('/')
 }

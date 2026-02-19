@@ -5,7 +5,7 @@
  */
 import { defineStore } from 'pinia'
 import { useGameStore } from './gameStore'
-import type { Company, Employee, MarketData, RecruitCandidate, Office, Perk, Loan, Competitor, MarketingChannel, EmployeeSpecialty, BoardMember, InfrastructureItem, StrategicDecision } from '~/types'
+import type { Company, Employee, MarketData, RecruitCandidate, Office, Perk, Loan, Competitor, MarketingChannel, EmployeeSpecialty, BoardMember, InfrastructureItem, StrategicDecision, Project, MarketClaim } from '~/types'
 import infrastructureData from '~/mock/infrastructure.json'
 import companyData from '~/mock/company.json'
 import employeesData from '~/mock/employees.json'
@@ -45,6 +45,8 @@ interface CompanyStoreState {
   boardMembers: BoardMember[]
   infrastructureCatalogue: InfrastructureItem[]
   pendingDecisions: StrategicDecision[]
+  activeProjects: Project[]
+  marketClaims: MarketClaim[]
 }
 
 export const useCompanyStore = defineStore('company', {
@@ -94,8 +96,10 @@ export const useCompanyStore = defineStore('company', {
       { id: 2, name: 'Fatou Business', role: 'Business Angel', influence: 0.3, satisfaction: 70, personality: 'balanced', icon: '👩‍💼', sharePercent: 10, lastVote: 'none' },
       { id: 3, name: 'Marc Innov', role: 'Expert Tech', influence: 0.3, satisfaction: 75, personality: 'aggressive', icon: '🧔', sharePercent: 5, lastVote: 'none' },
     ],
-    infrastructureCatalogue: infrastructureData as InfrastructureItem[],
-    pendingDecisions: []
+    infrastructureCatalogue: (infrastructureData as InfrastructureItem[]).map(i => ({ ...i, condition: 100 })),
+    pendingDecisions: [],
+    activeProjects: [],
+    marketClaims: []
   }),
 
   getters: {
@@ -244,9 +248,11 @@ export const useCompanyStore = defineStore('company', {
       return malus
     },
 
-    /** Part détenue par le CEO (1 - investorShare) */
+    /** Part réelle du CEO (100% - part des membres du board) */
     ceoShare(state: CompanyStoreState): number {
-      return 1 - state.company.investorShare
+      const fixedInvestorShare = state.company.investorShare * 100
+      const boardShares = state.boardMembers.reduce((sum, m) => sum + m.sharePercent, 0)
+      return Math.max(0, 100 - boardShares - fixedInvestorShare)
     },
 
     /** Moyenne de satisfaction du Board */
@@ -575,6 +581,44 @@ export const useCompanyStore = defineStore('company', {
     /** Appliquer un "tick" de simulation (fraction d'un mois) */
     applyTick(dayFraction: number) {
       const gameStore = useGameStore()
+
+      // 1. Obsolescence et Usure (mensuelle)
+      this.infrastructureCatalogue.forEach(item => {
+        if (this.company.ownedInfrastructure.includes(item.id)) {
+          // Usure naturelle (1% par mois environ)
+          item.condition = Math.max(0, item.condition - (1 * dayFraction))
+        }
+      })
+
+      // 2. Progression des Projets
+      this.activeProjects.forEach((project: Project) => {
+        if (project.status === 'active') {
+          const assigned = this.employees.filter(e => project.assignedEmployees.includes(e.id))
+          if (assigned.length > 0) {
+            const avgSkill = assigned.reduce((s, e) => s + e.skillLevel, 0) / assigned.length
+            const totalDifficulty = project.duration * project.teamSize
+            const progressStep = (avgSkill / 10) * dayFraction * (100 / project.duration)
+            project.progress = Math.min(100, project.progress + progressStep)
+
+            if (project.progress >= 100) {
+              project.status = 'completed'
+              this.company.cash += project.reward
+              this.boardMembers.forEach(m => m.satisfaction = Math.min(100, m.satisfaction + (project.shareholderOpinion || 0)))
+              gameStore.triggerEvent({
+                id: 600,
+                name: "Projet Terminé !",
+                description: `Le projet ${project.title} est un succès. Gains: ${project.reward} FCFA`,
+                type: "gain",
+                impactValue: project.reward,
+                icon: "🚀",
+                probability: 1
+              })
+            }
+          }
+          // Coût de fonctionnement
+          this.company.cash -= (project.budget / 30) * dayFraction
+        }
+      })
       const cycleMult = this.getCycleMultiplier()
 
       // Obsolescence & Infrastructure malus
@@ -825,6 +869,93 @@ export const useCompanyStore = defineStore('company', {
     },
 
     /** Améliorer l'équipement de bureau */
+    // ─── GOUVERNANCE & CAPITAL ───
+
+    /** Racheter des parts aux investisseurs */
+    buybackShares(memberId: number) {
+      const member = this.boardMembers.find(m => m.id === memberId)
+      if (!member) return
+
+      const cost = member.sharePercent * this.company.sharePrice * 0.8 // Prix avec décote rachat
+
+      // Rejet si satisfaction trop basse
+      if (member.satisfaction < 50) {
+        const gameStore = useGameStore()
+        gameStore.triggerEvent({
+          id: 501,
+          name: "Rachat Refusé",
+          description: `${member.name} refuse catégoriquement de céder ses parts. Sa satisfaction est trop basse.`,
+          type: "loss",
+          impactValue: 0,
+          icon: "🚫",
+          probability: 1
+        })
+        return
+      }
+
+      if (this.company.cash >= cost) {
+        this.company.cash -= cost
+        // Supprimer du board s'il n'a plus de parts
+        this.boardMembers = this.boardMembers.filter(m => m.id !== memberId)
+
+        const gameStore = useGameStore()
+        gameStore.triggerEvent({
+          id: 500,
+          name: "Rachat de parts",
+          description: `Vous avez racheté les parts de ${member.name}. Vous reprenez le contrôle !`,
+          type: "gain",
+          impactValue: cost,
+          icon: "🤝",
+          probability: 1
+        })
+      }
+    },
+
+    // ─── PROJETS & PRODUCTION ───
+
+    /** Générer un nouveau projet aléatoire */
+    generateProject() {
+      const ids = ['p-crm', 'p-ai', 'p-saas', 'p-mobile', 'p-blockchain']
+      const titles = ['Refonte CRM 2.0', 'Module IA Prédictive', 'SaaS E-commerce', 'App Mobile Livreur', 'Smart Contract Tool']
+      const idx = Math.floor(Math.random() * ids.length)
+
+      const newProject: Project = {
+        id: `${ids[idx]}-${Date.now()}`,
+        title: titles[idx],
+        description: "Un projet stratégique pour augmenter nos revenus.",
+        duration: 15 + Math.floor(Math.random() * 20),
+        progress: 0,
+        cost: 5000 + Math.floor(Math.random() * 10000),
+        budget: 1000 + Math.floor(Math.random() * 5000),
+        teamSize: 2 + Math.floor(Math.random() * 3),
+        requiredSkills: { tech: 3, sales: 0, creative: 0, hr: 0, management: 2 },
+        reward: 50000 + Math.floor(Math.random() * 100000),
+        penalty: 25000,
+        status: 'pending',
+        shareholderOpinion: 5,
+        assignedEmployees: []
+      }
+
+      this.activeProjects.push(newProject)
+    },
+
+    assignEmployeesToProject(projectId: string, employeeIds: number[]) {
+      const project = this.activeProjects.find((p: Project) => p.id === projectId)
+      if (project) {
+        project.assignedEmployees = employeeIds
+        project.status = 'active'
+      }
+    },
+
+    // ─── MAINTENANCE ───
+    repairInfrastructure(itemId: string) {
+      const item = this.infrastructureCatalogue.find(i => i.id === itemId)
+      if (item && this.company.cash >= 500) {
+        this.company.cash -= 500
+        item.condition = 100
+      }
+    },
+
     upgradeEquipment() {
       const gameStore = useGameStore()
       const cost = 50000 * this.company.equipmentLevel

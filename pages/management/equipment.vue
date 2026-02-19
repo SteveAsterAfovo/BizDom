@@ -141,17 +141,22 @@ function getMissingDeps(deps: string[]) {
               </div>
 
               <!-- État / Dépréciation -->
-              <div v-if="isOwned(item.id)" class="mb-4 space-y-2">
-                <div class="flex justify-between text-[9px] font-black uppercase">
-                  <span class="text-dark-500">État : {{ item.condition }}%</span>
-                  <span :class="item.condition > 80 ? 'text-gain-500' : 'text-loss-500'">
-                    {{ item.condition > 80 ? 'Optimal' : 'Usé' }}
-                  </span>
-                </div>
-                <div class="w-full h-1 bg-dark-800 rounded-full overflow-hidden">
-                  <div class="h-full bg-gain-500" :style="{ width: item.condition + '%' }"></div>
+              <div class="flex justify-between text-[9px] font-black uppercase">
+                <span class="text-dark-500">État : {{ Math.round(item.condition) }}%</span>
+                <span :class="item.condition > 50 ? 'text-gain-500' : 'text-loss-500'">
+                  {{ item.condition > 50 ? 'Optimal' : 'Usé' }}
+                </span>
+              </div>
+              <div class="w-full h-1 bg-dark-800 rounded-full overflow-hidden mb-2">
+                <div class="h-full transition-all duration-500"
+                  :class="item.condition > 50 ? 'bg-gain-500' : 'bg-loss-500'" :style="{ width: item.condition + '%' }">
                 </div>
               </div>
+              <button v-if="item.condition < 100" @click="companyStore.repairInfrastructure(item.id)"
+                :disabled="!canAfford(500)"
+                class="w-full py-1.5 rounded-lg bg-dark-800 border border-white/5 text-[8px] font-black uppercase tracking-widest text-dark-300 hover:text-white hover:bg-dark-700 transition-all">
+                🔧 Réparer (500 FCFA)
+              </button>
 
 
               <div v-if="item.risky" class="p-2 rounded-lg bg-orange-500/10 border border-orange-500/30 mb-4">

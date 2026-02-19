@@ -10,6 +10,14 @@ const isSidebarOpen = ref(true)
 const { startRealTimeSimulation } = useSimulation()
 const companyStore = useCompanyStore()
 
+onMounted(() => {
+  const saved = localStorage.getItem('bizdom_save_v1')
+  if (saved) {
+    const data = JSON.parse(saved)
+    companyStore.$patch(data)
+  }
+})
+
 const avatars = [
   { id: 'casual-1', icon: '👦' },
   { id: 'casual-2', icon: '👧' },
@@ -28,14 +36,19 @@ onMounted(() => {
 
 const navLinks = [
   { to: '/', icon: '📊', label: 'Dashboard' },
-  { to: '/dg', icon: '🏛️', label: 'Hub DG' },
-  { to: '/employees', icon: '👥', label: 'Employés' },
-  { to: '/management/equipment', icon: '🖥️', label: 'Équipement' },
+  { to: '/dg', icon: '🏛️', label: 'Directeur Général' },
   { to: '/management/equity', icon: '💰', label: 'Finance' },
-  { to: '/management/governance', icon: '🏛️', label: 'Gouvernance' },
+  { to: '/management/governance', icon: '⚖️', label: 'Gouvernance' },
+  { to: '/management/projects', icon: '🚀', label: 'Projets Production' },
+  { to: '/employees', icon: '👥', label: 'RH & Equipes' },
+  { to: '/management/market', icon: '🎯', label: 'Marketing' },
+  { to: '/management/bank', icon: '🏦', label: 'Ma Banque' },
+  { to: '/management/equipment', icon: '🖥️', label: 'Infrastructure' },
+  { to: '/management/office', icon: '�', label: 'Siège Social' },
   { to: '/management/quests', icon: '🎯', label: 'Quêtes' },
   { to: '/reports', icon: '📋', label: 'Rapports' },
   { to: '/achievements', icon: '🏆', label: 'Succès' },
+  { to: '/settings', icon: '⚙️', label: 'Paramètres' },
 ]
 </script>
 
