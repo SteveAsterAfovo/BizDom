@@ -24,22 +24,42 @@ export const useQuestStore = defineStore('quests', {
       const questPool: Quest[] = [
         {
           id: 'satisfaction_90',
-          title: 'Service Client Or',
+          title: 'Service Client Or 🥇',
           description: 'Atteindre 90% de satisfaction client.',
           condition: 'satisfaction_90',
           rewardType: 'cash',
-          rewardValue: 15000,
+          rewardValue: 50000,
           completed: false,
-          deadline: gameStore.currentDay + 5 // 5 jours pour réussir
+          deadline: gameStore.currentDay + 5,
+          pros: ['Gros bonus de trésorerie', 'Booste la réputation'],
+          cons: ['Pression sur les équipes', 'Coût marketing élevé'],
+          failurePenalty: 15000
         },
         {
           id: 'recruit_tech',
-          title: 'Besoin de Talents',
+          title: 'Besoin de Talents 👨‍💻',
           description: 'Recruter au moins 3 spécialistes Tech.',
           condition: 'recruit_tech_3',
           rewardType: 'motivation',
           rewardValue: 20,
-          completed: false
+          completed: false,
+          deadline: gameStore.currentDay + 10,
+          pros: ['Vitesse de dev accrue', 'Moral d\'équipe'],
+          cons: ['Masse salariale augmente', 'Risque de burnout'],
+          failurePenalty: 5000
+        },
+        {
+          id: 'cash_reserve',
+          title: 'Écureuil Prudent 🐿️',
+          description: 'Accumuler 500k de cash en réserve.',
+          condition: 'cash_500k',
+          rewardType: 'perk',
+          rewardValue: 1, // Unlock un perk spécial
+          completed: false,
+          deadline: gameStore.currentDay + 15,
+          pros: ['Sécurité financière', 'Confiance des investisseurs'],
+          cons: ['Croissance ralentie', 'Manque d\'investissement'],
+          failurePenalty: 25000
         }
       ]
 
@@ -67,14 +87,29 @@ export const useQuestStore = defineStore('quests', {
             const techs = companyStore.employees.filter(e => e.specialty === 'tech').length
             if (techs >= 3) isFulfilled = true
             break
+          case 'cash_500k':
+            if (companyStore.company.cash >= 500000) isFulfilled = true
+            break
         }
 
         if (isFulfilled) {
           this.completeQuest(quest.id)
         }
 
-        // Vérifier deadline
+        // Vérifier deadline et appliquer pénalité
         if (quest.deadline && gameStore.currentDay >= quest.deadline && !isFulfilled) {
+          if (quest.failurePenalty > 0) {
+            companyStore.company.cash -= quest.failurePenalty
+            gameStore.triggerEvent({
+              id: 300,
+              name: "Objectif Échoué",
+              description: `L'objectif "${quest.title}" a expiré. Pénalité de trésorerie appliquée.`,
+              type: "loss",
+              impactValue: quest.failurePenalty,
+              icon: "📉",
+              probability: 1
+            })
+          }
           this.removeQuest(quest.id)
         }
       })

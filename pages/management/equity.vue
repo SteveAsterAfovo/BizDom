@@ -63,17 +63,29 @@ function formatCurrency(value: number): string {
             cédez <strong class="text-loss-400">5%</strong> de vos revenus mensuels à vie.
           </p>
 
-          <div class="mb-6 p-4 rounded-xl bg-dark-950/50 border border-dark-700">
-            <div class="flex justify-between items-center mb-1">
-              <span class="text-[9px] uppercase font-black text-dark-500">Santé Sociale Requise</span>
-              <span :class="companyStore.strikeRisk <= 40 ? 'text-gain-400' : 'text-loss-500'"
-                class="text-[10px] font-black italic">
-                {{ companyStore.strikeRisk <= 40 ? 'ÉLIGIBLE ✓' : 'REFUSÉ ✕' }} </span>
+          <div class="mb-6 space-y-3">
+            <div class="p-4 rounded-xl bg-dark-950/50 border border-dark-700">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-[9px] uppercase font-black text-dark-500">Santé Sociale</span>
+                <span :class="companyStore.strikeRisk <= 40 ? 'text-gain-400' : 'text-loss-500'"
+                  class="text-[10px] font-black italic">
+                  {{ companyStore.strikeRisk <= 40 ? 'ÉLIGIBLE ✓' : 'REFUSÉ ✕' }} </span>
+              </div>
+              <p v-if="companyStore.strikeRisk > 40" class="text-[8px] text-loss-600 leading-tight italic">
+                Risque de grève trop élevé ({{ companyStore.strikeRisk.toFixed(0) }}% > 40%).
+              </p>
             </div>
-            <p v-if="companyStore.strikeRisk > 40" class="text-[8px] text-loss-600 leading-tight italic">
-              Les investisseurs refusent car votre risque de grève est trop élevé ({{ companyStore.strikeRisk.toFixed(0)
-              }}% > 40%).
-            </p>
+
+            <div class="p-4 rounded-xl bg-dark-950/50 border border-dark-700">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-[9px] uppercase font-black text-dark-500">Satisfaction Conseil</span>
+                <span :class="companyStore.boardSatisfaction >= 50 ? 'text-gain-400' : 'text-loss-500'"
+                  class="text-[10px] font-black italic">
+                  {{ companyStore.boardSatisfaction >= 50 ? 'ÉLIGIBLE ✓' : 'REFUSÉ ✕' }} </span>
+              </div>
+              <p v-if="companyStore.boardSatisfaction < 50" class="text-[8px] text-loss-600 leading-tight italic">
+                Le Board n'a pas assez confiance ({{ companyStore.boardSatisfaction }}% < 50%). </p>
+            </div>
           </div>
 
           <button class="w-full py-4 rounded-xl font-black uppercase tracking-widest transition-all shadow-glow-accent"

@@ -40,30 +40,56 @@ function formatCurrency(value: number): string {
 
           <p class="text-sm text-dark-300">{{ quest.description }}</p>
 
-          <div class="p-4 rounded-xl bg-dark-850 border border-dark-700/50">
-            <p class="text-[9px] text-dark-500 uppercase font-black mb-2 tracking-tighter">Récompense promise</p>
-            <div class="flex items-center gap-2">
-              <span class="text-lg font-black text-white">
-                {{ quest.rewardType === 'cash' ? formatCurrency(quest.rewardValue) : `+${quest.rewardValue} Motivation`
-                }}
+          <!-- Pros/Cons Columns -->
+          <div class="grid grid-cols-2 gap-3 pb-2">
+            <div class="space-y-1">
+              <p class="text-[8px] font-black text-dark-500 uppercase tracking-widest">Avantages</p>
+              <div v-for="pro in quest.pros" :key="pro"
+                class="text-[10px] text-gain-400 font-bold flex items-start gap-1">
+                <span class="mt-0.5">▲</span> {{ pro }}
+              </div>
+            </div>
+            <div class="space-y-1">
+              <p class="text-[8px] font-black text-dark-500 uppercase tracking-widest">Inconvénients</p>
+              <div v-for="con in quest.cons" :key="con"
+                class="text-[10px] text-loss-400 font-bold flex items-start gap-1">
+                <span class="mt-0.5">▼</span> {{ con }}
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="p-4 rounded-xl bg-dark-850 border border-dark-700/50">
+              <p class="text-[9px] text-dark-500 uppercase font-black mb-1 tracking-tighter">Récompense</p>
+              <span class="text-sm font-black text-white">
+                {{ quest.rewardType === 'cash' ? formatCurrency(quest.rewardValue) : `+${quest.rewardValue} Mo` }}
+              </span>
+            </div>
+            <div v-if="quest.failurePenalty" class="p-4 rounded-xl bg-loss-500/5 border border-loss-500/20">
+              <p class="text-[9px] text-loss-500 uppercase font-black mb-1 tracking-tighter">Pénalité</p>
+              <span class="text-sm font-black text-loss-400">
+                -{{ formatCurrency(quest.failurePenalty) }}
               </span>
             </div>
           </div>
 
           <div v-if="quest.deadline" class="flex items-center gap-2">
             <div class="flex-1 h-1 bg-dark-800 rounded-full overflow-hidden">
-              <div class="h-full bg-loss-500 animate-pulse" :style="{ width: '50%' }"></div>
+              <!-- Calculer % temps restant -->
+              <div class="h-full bg-loss-500" :style="{ width: '70%' }"></div>
             </div>
-            <span class="text-[9px] text-loss-400 font-black uppercase">⌛ Expire J{{ quest.deadline }}</span>
+            <span class="text-[9px] text-loss-400 font-black uppercase tracking-widest">Expire J{{ quest.deadline
+              }}</span>
           </div>
 
           <button v-if="quest.completed"
-            class="w-full py-3 rounded-xl bg-gain-500 text-white font-black uppercase tracking-widest shadow-glow-gain hover:scale-105 active:scale-95 transition-all"
+            class="w-full py-3 rounded-xl bg-gain-500 text-white font-black uppercase tracking-widest shadow-glow-gain hover:scale-[1.02] active:scale-[0.98] transition-all"
             @click="questStore.completeQuest(quest.id)">
             Réclamer Bonus
           </button>
-          <div v-else class="text-center py-2 text-[10px] text-dark-500 font-bold uppercase tracking-widest">
-            En cours de réalisation...
+          <div v-else
+            class="text-center py-2 text-[10px] text-dark-500 font-bold uppercase tracking-widest border border-dashed border-dark-700 rounded-xl">
+            Objectif en cours
           </div>
         </div>
       </div>

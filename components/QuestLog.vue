@@ -33,13 +33,25 @@ function formatCurrency(value: number): string {
           </div>
           <p class="text-[10px] text-dark-400 mb-2">{{ quest.description }}</p>
 
+          <!-- Pros/Cons Shorthand -->
+          <div v-if="!quest.completed" class="mb-3 space-y-1">
+            <div v-for="pro in quest.pros?.slice(0, 1)" :key="pro"
+              class="text-[9px] text-gain-500 font-bold flex items-center gap-1">
+              <span>▲</span> {{ pro }}
+            </div>
+            <div v-for="con in quest.cons?.slice(0, 1)" :key="con"
+              class="text-[9px] text-loss-500 font-bold flex items-center gap-1">
+              <span>▼</span> {{ con }}
+            </div>
+          </div>
+
           <div class="flex items-center justify-between">
             <span class="text-[10px] bg-dark-700 px-2 py-0.5 rounded text-dark-300">
               {{ quest.rewardType === 'cash' ? formatCurrency(quest.rewardValue) : `+${quest.rewardValue} Motivation` }}
             </span>
 
             <span v-if="quest.deadline" class="text-[9px] text-loss-400 font-bold uppercase">
-              ⌛ Expire J{{ quest.deadline }}
+              ⌛ J{{ quest.deadline }} ({{ formatCurrency(quest.failurePenalty || 0) }})
             </span>
           </div>
         </div>

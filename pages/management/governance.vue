@@ -4,7 +4,7 @@
  * Interface pour gérer le Conseil d'Administration et les décisions stratégiques
  */
 import { useCompanyStore } from '~/stores/companyStore'
-import type { StrategicDecision } from '~/types'
+import type { StrategicDecision, BoardMember } from '~/types'
 
 const companyStore = useCompanyStore()
 
@@ -36,6 +36,15 @@ const potentialDecisions: StrategicDecision[] = [
     impacts: { reputation: 10, cash: -30000 },
     risk: 0.3,
     boardSupport: 55
+  },
+  {
+    id: 'dec-social',
+    title: 'Bonus Exceptionnel 🧧',
+    description: 'Offrir une prime à tous les employés pour booster le moral.',
+    cost: 15000,
+    impacts: { motivation: 15, cash: -15000 },
+    risk: 0,
+    boardSupport: 60
   }
 ]
 
@@ -55,12 +64,12 @@ async function submitDecision(decision: StrategicDecision) {
     lastDecisionResult.value = `La décision "${decision.title}" a été validée par le Conseil.`
   } else {
     meetingStatus.value = 'rejected'
-    lastDecisionResult.value = `Le Conseil a rejeté votre proposition : "${decision.title}". Votre influence baisse.`
+    lastDecisionResult.value = `Le Conseil a rejeté votre proposition : "${decision.title}".`
   }
 
   setTimeout(() => {
     meetingStatus.value = 'idle'
-  }, 5000)
+  }, 8000)
 }
 
 function getPersonalityLabel(p: string) {
@@ -72,20 +81,31 @@ function getPersonalityLabel(p: string) {
 <template>
   <div class="space-y-8 animate-fade-in">
     <!-- Header -->
-    <header class="flex justify-between items-end">
+    <header class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
       <div>
         <h2 class="text-3xl font-black text-white italic tracking-tighter uppercase">Gouvernance <span
             class="text-accent-500">& Board</span></h2>
         <p class="text-dark-400 font-bold uppercase tracking-widest text-xs mt-1">Gérez vos relations avec les
           investisseurs et le CODIR</p>
       </div>
-      <div class="bg-dark-900 px-6 py-3 rounded-2xl border border-white/5 flex items-center gap-4">
-        <span class="text-xs font-black text-dark-500 uppercase">Satisfaction Board</span>
-        <div class="w-32 h-2 bg-dark-800 rounded-full overflow-hidden">
-          <div class="h-full bg-accent-500 transition-all duration-1000"
-            :style="{ width: companyStore.boardSatisfaction + '%' }"></div>
+
+      <div class="flex gap-4">
+        <!-- General Score Counter -->
+        <div
+          class="bg-dark-900 px-6 py-3 rounded-2xl border-2 border-accent-500/20 flex flex-col items-center min-w-[120px]">
+          <span class="text-[9px] font-black text-accent-500 uppercase tracking-widest mb-1">Score Global</span>
+          <span class="text-2xl font-black text-white italic animate-pulse-slow">{{ companyStore.generalScore }}</span>
         </div>
-        <span class="text-sm font-black text-white">{{ companyStore.boardSatisfaction }}%</span>
+
+        <div class="bg-dark-900 px-6 py-3 rounded-2xl border border-white/5 flex items-center gap-4">
+          <span class="text-xs font-black text-dark-500 uppercase">Satisfaction Board</span>
+          <div class="w-32 h-2 bg-dark-800 rounded-full overflow-hidden">
+            <div class="h-full transition-all duration-1000"
+              :class="companyStore.boardSatisfaction > 50 ? 'bg-gain-500' : 'bg-loss-500'"
+              :style="{ width: companyStore.boardSatisfaction + '%' }"></div>
+          </div>
+          <span class="text-sm font-black text-white">{{ companyStore.boardSatisfaction }}%</span>
+        </div>
       </div>
     </header>
 
@@ -93,9 +113,20 @@ function getPersonalityLabel(p: string) {
 
       <!-- Board Members List -->
       <div class="lg:col-span-1 space-y-4">
-        <h3 class="text-xs font-black text-dark-500 uppercase tracking-[0.2em] px-2">Membres du Conseil</h3>
+        <h3 class="text-xs font-black text-dark-500 uppercase tracking-[0.2em] px-2">Table de l'Actionnariat</h3>
         <div v-for="member in companyStore.boardMembers" :key="member.id"
-          class="card p-4 flex items-center gap-4 bg-dark-900/50 border-white/5 hover:border-accent-500/30 transition-all group">
+          class="card p-4 flex items-center gap-4 bg-dark-900/50 border-white/5 hover:border-accent-500/30 transition-all group relative overflow-hidden">
+
+          <!-- Individual Vote Badge -->
+          <div v-if="meetingStatus !== 'idle'"
+            class="absolute inset-0 z-10 flex items-center justify-center backdrop-blur-sm transition-all animate-fade-in">
+            <div v-if="meetingStatus === 'voting'" class="animate-spin text-xl">⏳</div>
+            <div v-else :class="member.lastVote === 'yes' ? 'bg-gain-500 text-white' : 'bg-loss-500 text-white'"
+              class="px-5 py-2 rounded-full font-black text-xs uppercase shadow-2xl">
+              {{ member.lastVote === 'yes' ? 'ACCEPTE ✅' : 'REFUSE ❌' }}
+            </div>
+          </div>
+
           <div
             class="w-12 h-12 rounded-xl bg-dark-850 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
             {{ member.icon }}
@@ -105,6 +136,11 @@ function getPersonalityLabel(p: string) {
             <p class="text-[10px] text-dark-500 font-bold uppercase tracking-wider">{{ member.role }}</p>
           </div>
           <div class="text-right">
+            <p class="text-xs font-black text-white italic tracking-tighter">{{ member.sharePercent }}%</p>
+            <p class="text-[9px] text-dark-600 font-bold uppercase">Parts</p>
+          </div>
+          <div class="w-px h-8 bg-white/5"></div>
+          <div class="text-right min-w-[40px]">
             <p class="text-[10px] font-black uppercase"
               :class="member.satisfaction > 60 ? 'text-gain-500' : 'text-loss-500'">
               {{ member.satisfaction }}%
@@ -127,37 +163,52 @@ function getPersonalityLabel(p: string) {
                 'bg-loss-500/10 border-loss-500/40 text-loss-400'
           ]">
             <span v-if="meetingStatus === 'voting'" class="animate-spin text-2xl">⏳</span>
-            <span v-if="meetingStatus === 'approved'" class="text-2xl">✅</span>
-            <span v-if="meetingStatus === 'rejected'" class="text-2xl">❌</span>
-            <p class="font-bold">{{ meetingStatus === 'voting' ? 'Le Conseil délibère...' : lastDecisionResult }}</p>
+            <span v-if="meetingStatus === 'approved'" class="text-2xl">🗳️</span>
+            <span v-if="meetingStatus === 'rejected'" class="text-2xl">🚫</span>
+            <p class="font-bold uppercase tracking-tight">
+              {{ meetingStatus === 'voting' ? 'Le Conseil délibère en séance...' : lastDecisionResult }}</p>
           </div>
         </Transition>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div v-for="dec in potentialDecisions" :key="dec.id"
-            class="card p-6 bg-dark-900 border-white/5 flex flex-col justify-between hover:translate-y-[-4px] transition-all">
-            <div>
-              <h4 class="text-lg font-black text-white mb-2">{{ dec.title }}</h4>
-              <p class="text-sm text-dark-400 font-medium leading-relaxed">{{ dec.description }}</p>
+            class="card p-6 bg-dark-900 border-white/5 flex flex-col justify-between hover:translate-y-[-4px] transition-all relative overflow-hidden group">
+            <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+              <span class="text-6xl font-black italic">{{ dec.title.split(' ').pop() }}</span>
+            </div>
 
-              <div class="mt-6 space-y-2">
-                <div class="flex justify-between text-[11px] font-black uppercase">
-                  <span class="text-dark-500">Coût Immédiat</span>
-                  <span :class="dec.cost > 0 ? 'text-loss-400' : 'text-gain-400'">{{ dec.cost === 0 ? 'GRATUIT' :
-                    dec.cost.toLocaleString() + ' FCFA' }}</span>
+            <div class="relative z-10">
+              <h4 class="text-lg font-black text-white mb-2 italic">{{ dec.title }}</h4>
+              <p class="text-sm text-dark-400 font-medium leading-relaxed mb-6">{{ dec.description }}</p>
+
+              <div class="space-y-3">
+                <div class="flex justify-between items-center bg-dark-850/50 p-3 rounded-xl border border-white/5">
+                  <span class="text-[9px] font-black text-dark-500 uppercase">Coût</span>
+                  <span class="text-xs font-black" :class="dec.cost > 0 ? 'text-loss-400' : 'text-gain-400'">
+                    {{ dec.cost === 0 ? 'INVEST. BLOQUÉ' : dec.cost.toLocaleString() + ' FCFA' }}
+                  </span>
                 </div>
-                <div class="flex justify-between text-[11px] font-black uppercase">
-                  <span class="text-dark-500">Risque perçu</span>
-                  <span :class="dec.risk > 0.4 ? 'text-loss-500' : 'text-accent-500'">{{ Math.round(dec.risk * 100)
-                    }}%</span>
+                <div class="flex justify-between items-center bg-dark-850/50 p-3 rounded-xl border border-white/5">
+                  <span class="text-[9px] font-black text-dark-500 uppercase">Acceptation cible</span>
+                  <div class="flex items-center gap-2">
+                    <div class="w-16 h-1 bg-dark-700 rounded-full overflow-hidden">
+                      <div class="h-full bg-accent-500" :style="{ width: (dec.boardSupport || 50) + '%' }"></div>
+                    </div>
+                    <span class="text-xs font-black text-white">{{ dec.boardSupport || 50 }}%</span>
+                  </div>
+                </div>
+                <div class="flex justify-between items-center bg-dark-850/50 p-3 rounded-xl border border-white/5">
+                  <span class="text-[9px] font-black text-dark-500 uppercase">Indice de Risque</span>
+                  <span class="text-xs font-black" :class="dec.risk > 0.4 ? 'text-loss-500' : 'text-accent-500'">{{
+                    Math.round(dec.risk * 100) }}%</span>
                 </div>
               </div>
             </div>
 
             <button @click="submitDecision(dec)"
               :disabled="meetingStatus !== 'idle' || (dec.cost > companyStore.company.cash)"
-              class="mt-8 w-full py-4 rounded-xl font-black text-xs uppercase tracking-widest transition-all bg-dark-850 text-white border-2 border-dark-700 hover:border-accent-500 hover:text-accent-400 disabled:opacity-30">
-              Proposer au Conseil
+              class="relative z-10 mt-8 w-full py-4 rounded-xl font-black text-xs uppercase tracking-widest transition-all bg-accent-600/10 text-accent-500 border-2 border-accent-500/30 hover:bg-accent-600 hover:text-white hover:border-accent-500 disabled:opacity-30 disabled:grayscale">
+              Convoquer le Collège
             </button>
           </div>
         </div>
@@ -168,9 +219,27 @@ function getPersonalityLabel(p: string) {
 </template>
 
 <style scoped>
+.animate-pulse-slow {
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
 .slide-down-enter-active,
 .slide-down-leave-active {
-  transition: all 0.3s ease-out;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .slide-down-enter-from,

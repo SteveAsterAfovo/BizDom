@@ -56,6 +56,7 @@ export const useCompanyStore = defineStore('company', {
       isConfigured: false,
       boardSatisfaction: 75,
       ownedInfrastructure: ['pwr-standard', 'net-4g', 'ws-pc-eco'],
+      generalScore: 100,
     } as Company,
     employees: employeesData.slice(0, 2).map((e) => ({
       ...e,
@@ -79,9 +80,9 @@ export const useCompanyStore = defineStore('company', {
     marketingChannels: channelsData.map((ch) => ({ ...ch })) as MarketingChannel[],
     nextLoanId: 1,
     boardMembers: [
-      { id: 1, name: 'Jean-Claude Invest', role: 'Investisseur VC', influence: 0.4, satisfaction: 80, personality: 'conservative', icon: '👴' },
-      { id: 2, name: 'Fatou Business', role: 'Business Angel', influence: 0.3, satisfaction: 70, personality: 'balanced', icon: '👩‍💼' },
-      { id: 3, name: 'Marc Innov', role: 'Expert Tech', influence: 0.3, satisfaction: 75, personality: 'aggressive', icon: '🧔' },
+      { id: 1, name: 'Jean-Claude Invest', role: 'Investisseur VC', influence: 0.4, satisfaction: 80, personality: 'conservative', icon: '👴', sharePercent: 20, lastVote: 'none' },
+      { id: 2, name: 'Fatou Business', role: 'Business Angel', influence: 0.3, satisfaction: 70, personality: 'balanced', icon: '👩‍💼', sharePercent: 10, lastVote: 'none' },
+      { id: 3, name: 'Marc Innov', role: 'Expert Tech', influence: 0.3, satisfaction: 75, personality: 'aggressive', icon: '🧔', sharePercent: 5, lastVote: 'none' },
     ],
     infrastructureCatalogue: infrastructureData as InfrastructureItem[],
     pendingDecisions: []
@@ -241,6 +242,17 @@ export const useCompanyStore = defineStore('company', {
     /** Moyenne de satisfaction du Board */
     boardSatisfaction(state: CompanyStoreState): number {
       return Math.round(state.boardMembers.reduce((s, m) => s + m.satisfaction * m.influence, 0))
+    },
+
+    /** Score global de l'entreprise (0-1000) */
+    generalScore(state: CompanyStoreState): number {
+      const cashScore = Math.min(250, state.company.cash / 2000)
+      const employeesScore = state.employees.length * 10
+      const motivationScore = (state.employees.reduce((sum, e) => sum + e.motivation, 0) / (state.employees.length || 1)) * 2
+      const equipmentScore = state.company.equipmentLevel * 30
+      const boardScore = state.company.boardSatisfaction * 2
+
+      return Math.min(1000, Math.round(cashScore + employeesScore + motivationScore + equipmentScore + boardScore))
     }
   },
 
@@ -685,25 +697,38 @@ export const useCompanyStore = defineStore('company', {
 
     /** Soumettre une décision au Board */
     submitStrategicDecision(decision: StrategicDecision) {
-      // Calculer l'accord du Board (Moyenne pondérée influence * satisfaction)
-      const approvalScore = this.boardMembers.reduce((sum: number, m: BoardMember) => {
-        let score = m.satisfaction
-        if (decision.risk > 0.5 && m.personality === 'conservative') score -= 20
-        if (decision.risk > 0.5 && m.personality === 'aggressive') score += 10
-        return sum + (score * m.influence)
-      }, 0)
+      // Calculer l'accord du Board et enregistrer les votes
+      let totalApproval = 0
+      this.boardMembers.forEach(m => {
+        let memberScore = m.satisfaction
+        if (decision.risk > 0.5 && m.personality === 'conservative') memberScore -= 20
+        if (decision.risk > 0.5 && m.personality === 'aggressive') memberScore += 10
+
+        const approved = memberScore >= 50
+        m.lastVote = approved ? 'yes' : 'no'
+
+        if (approved) totalApproval += m.influence
+      })
+
+      const approvalScore = (totalApproval / this.boardMembers.reduce((s, m) => s + m.influence, 0)) * 100
 
       if (approvalScore >= (decision.boardSupport || 50)) {
         // Appliquer impacts
         if (decision.impacts.cash) this.updateCash(decision.impacts.cash)
         if (decision.impacts.marketShare) {
-          // Logique de part de marché simplifiée
+          this.market.customerBase += Math.round(this.market.customerBase * (decision.impacts.marketShare / 100))
         }
-        this.boardMembers.forEach(m => m.satisfaction = Math.min(100, m.satisfaction + 5))
+        this.boardMembers.forEach(m => {
+          if (m.lastVote === 'yes') m.satisfaction = Math.min(100, m.satisfaction + 5)
+          else m.satisfaction = Math.max(0, m.satisfaction - 2)
+        })
         return true
       } else {
         // Rejet
-        this.boardMembers.forEach(m => m.satisfaction = Math.max(0, m.satisfaction - 10))
+        this.boardMembers.forEach(m => {
+          if (m.lastVote === 'no') m.satisfaction = Math.min(100, m.satisfaction + 2)
+          else m.satisfaction = Math.max(0, m.satisfaction - 10)
+        })
         return false
       }
     },
@@ -716,7 +741,8 @@ export const useCompanyStore = defineStore('company', {
         lastUpgradeMonth: 1,
         isConfigured: false,
         boardSatisfaction: 75,
-        ownedInfrastructure: ['pwr-standard', 'net-4g', 'ws-pc-eco']
+        ownedInfrastructure: ['pwr-standard', 'net-4g', 'ws-pc-eco'],
+        generalScore: 100
       } as Company
       this.employees = employeesData.slice(0, 2).map((e) => ({
         ...e,
@@ -740,9 +766,9 @@ export const useCompanyStore = defineStore('company', {
       this.marketingChannels = channelsData.map((ch) => ({ ...ch })) as MarketingChannel[]
       this.nextLoanId = 1
       this.boardMembers = [
-        { id: 1, name: 'Jean-Claude Invest', role: 'Investisseur VC', influence: 0.4, satisfaction: 80, personality: 'conservative', icon: '👴' },
-        { id: 2, name: 'Fatou Business', role: 'Business Angel', influence: 0.3, satisfaction: 70, personality: 'balanced', icon: '👩‍💼' },
-        { id: 3, name: 'Marc Innov', role: 'Expert Tech', influence: 0.3, satisfaction: 75, personality: 'aggressive', icon: '🧔' },
+        { id: 1, name: 'Jean-Claude Invest', role: 'Investisseur VC', influence: 0.4, satisfaction: 80, personality: 'conservative', icon: '👴', sharePercent: 0, lastVote: 'none' },
+        { id: 2, name: 'Fatou Business', role: 'Business Angel', influence: 0.3, satisfaction: 70, personality: 'balanced', icon: '👩‍💼', sharePercent: 0, lastVote: 'none' },
+        { id: 3, name: 'Marc Innov', role: 'Expert Tech', influence: 0.3, satisfaction: 75, personality: 'aggressive', icon: '🧔', sharePercent: 0, lastVote: 'none' },
       ]
       this.company.ownedInfrastructure = ['pwr-standard', 'net-4g', 'ws-pc-eco']
     },
@@ -807,17 +833,32 @@ export const useCompanyStore = defineStore('company', {
       this.company.cash += amount
       this.company.investorShare += share
 
+      // Ajouter un nouvel actionnaire
+      const newId = this.boardMembers.length + 1
+      const personalities: ('conservative' | 'aggressive' | 'balanced')[] = ['conservative', 'aggressive', 'balanced']
+      this.boardMembers.push({
+        id: newId,
+        name: `Investisseur #${newId}`,
+        role: 'Capital Risqueur',
+        influence: 0.1,
+        satisfaction: 80,
+        personality: personalities[Math.floor(Math.random() * personalities.length)],
+        icon: '🏦',
+        sharePercent: 5,
+        lastVote: 'none'
+      })
+
       // Impact sur le board : soulagement ou méfiance
       this.boardMembers.forEach(m => {
         m.satisfaction = Math.min(100, m.satisfaction + 10)
-        // Mais dilution = perte de contrôle
-        m.influence *= 0.95
+        // Mais dilution = perte de contrôle (influence relative diminue)
+        if (m.id !== newId) m.influence *= 0.95
       })
 
       gameStore.triggerEvent({
         id: 112,
         name: "Levée de fonds réussie",
-        description: `100k FCFA injectés. Dilution de 5%. Le Board est rassuré sur le cash.`,
+        description: `100k FCFA injectés. Un nouvel investisseur rejoint le board (5%).`,
         type: "gain",
         impactValue: amount,
         icon: "💰",

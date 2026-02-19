@@ -28,6 +28,8 @@ export interface BoardMember {
     satisfaction: number   // 0 à 100
     personality: 'conservative' | 'aggressive' | 'balanced'
     icon: string
+    sharePercent: number   // Part détenue (%)
+    lastVote: 'yes' | 'no' | 'none' // Position lors du dernier vote
 }
 
 export interface StrategicDecision {
@@ -136,6 +138,7 @@ export interface Company {
     ceo?: CEO                // profile du CEO
     boardSatisfaction: number // 0 à 100
     ownedInfrastructure: string[] // IDs des items possédés
+    generalScore: number     // Score global (0-1000)
 }
 
 /** Employé de l'entreprise */
@@ -238,4 +241,7 @@ export interface Quest {
     rewardType: 'cash' | 'motivation' | 'perk'
     completed: boolean
     deadline?: number // Jour de fin
+    pros: string[]    // Avantages si réussi
+    cons: string[]    // Inconvénients/Risques si ignoré/échoué
+    failurePenalty: number // Impact cash si échoué
 }
