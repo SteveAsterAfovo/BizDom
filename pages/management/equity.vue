@@ -44,8 +44,7 @@ function handleSellShares() {
           </div>
 
           <div class="text-center">
-            <p class="text-4xl font-black text-white italic">{{ ((1 - companyStore.company.investorShare) *
-              100).toFixed(0) }}%</p>
+            <p class="text-4xl font-black text-white italic">{{ companyStore.ceoShare.toFixed(0) }}%</p>
             <p class="text-[10px] text-dark-500 uppercase font-black">Capital Détenu</p>
           </div>
         </div>
@@ -55,12 +54,11 @@ function handleSellShares() {
             <div>
               <p class="text-[10px] text-dark-500 font-black uppercase">Fortune Perso (Cash)</p>
               <span class="text-sm font-black text-white">{{ formatCurrency(companyStore.company.ceo?.bankBalance || 0)
-                }}</span>
+              }}</span>
             </div>
             <div class="text-right">
               <p class="text-[10px] text-dark-500 font-black uppercase">Capital Détenu</p>
-              <span class="text-xl font-black text-accent-400">{{ ((1 - companyStore.company.investorShare) *
-                100).toFixed(0) }}%</span>
+              <span class="text-xl font-black text-accent-400">{{ companyStore.ceoShare.toFixed(0) }}%</span>
             </div>
           </div>
 
@@ -96,7 +94,7 @@ function handleSellShares() {
               et dilution accélérée.</p>
           </div>
 
-          <button @click="handleSellShares" :disabled="(1 - companyStore.company.investorShare) * 100 - sellAmount < 10"
+          <button @click="handleSellShares" :disabled="companyStore.ceoShare - sellAmount < 10"
             class="w-full py-4 rounded-xl bg-accent-600 text-white font-black uppercase tracking-widest hover:bg-accent-500 transition-all shadow-glow-accent disabled:opacity-30">
             Confirmer la Vente
           </button>

@@ -250,9 +250,8 @@ export const useCompanyStore = defineStore('company', {
 
     /** Part réelle du CEO (100% - part des membres du board) */
     ceoShare(state: CompanyStoreState): number {
-      const fixedInvestorShare = state.company.investorShare * 100
       const boardShares = state.boardMembers.reduce((sum, m) => sum + m.sharePercent, 0)
-      return Math.max(0, 100 - boardShares - fixedInvestorShare)
+      return Math.max(0, 100 - boardShares)
     },
 
     /** Moyenne de satisfaction du Board */
@@ -279,7 +278,7 @@ export const useCompanyStore = defineStore('company', {
 
     /** Fortune nette du CEO (Cash + Valeur des parts) */
     ceoNetWorth(): number {
-      const sharesValue = (1 - this.company.investorShare) * 100 * this.company.sharePrice
+      const sharesValue = this.ceoShare * this.company.sharePrice
       return (this.company.ceo?.bankBalance || 0) + sharesValue
     },
   },
@@ -999,36 +998,49 @@ export const useCompanyStore = defineStore('company', {
       }
 
       const amount = 100000
-      const share = 0.05
+      const shareVal = 5 // 5%
       this.company.cash += amount
-      this.company.investorShare += share
+      this.company.investorShare += (shareVal / 100)
 
-      // Ajouter un nouvel actionnaire
-      const newId = this.boardMembers.length + 1
-      const personalities: ('conservative' | 'aggressive' | 'balanced')[] = ['conservative', 'aggressive', 'balanced']
-      this.boardMembers.push({
-        id: newId,
-        name: `Investisseur #${newId}`,
-        role: 'Capital Risqueur',
-        influence: 0.1,
-        satisfaction: 80,
-        personality: personalities[Math.floor(Math.random() * personalities.length)],
-        icon: '🏦',
-        sharePercent: 5,
-        lastVote: 'none'
-      })
+      const isNew = Math.random() < 0.6
+      let stakeholderName = ""
 
-      // Impact sur le board : soulagement ou méfiance
+      if (isNew || this.boardMembers.length === 0) {
+        // Ajouter un nouvel actionnaire
+        const newId = Math.max(0, ...this.boardMembers.map(m => m.id)) + 1
+        stakeholderName = `Investisseur #${newId}`
+        const personalities: ('conservative' | 'aggressive' | 'balanced')[] = ['conservative', 'aggressive', 'balanced']
+        this.boardMembers.push({
+          id: newId,
+          name: stakeholderName,
+          role: 'Capital Risqueur',
+          influence: 0.1,
+          satisfaction: 80,
+          personality: personalities[Math.floor(Math.random() * personalities.length)],
+          icon: '🏦',
+          sharePercent: shareVal,
+          lastVote: 'none'
+        })
+      } else {
+        // Augmenter un existant
+        const existing = this.boardMembers[Math.floor(Math.random() * this.boardMembers.length)]
+        existing.sharePercent += shareVal
+        existing.satisfaction = Math.min(100, existing.satisfaction + 15)
+        stakeholderName = existing.name
+      }
+
+      // Impact sur le board : dilution = perte de contrôle (influence relative diminue)
       this.boardMembers.forEach(m => {
-        m.satisfaction = Math.min(100, m.satisfaction + 10)
-        // Mais dilution = perte de contrôle (influence relative diminue)
-        if (m.id !== newId) m.influence *= 0.95
+        if (m.name !== stakeholderName) {
+          m.satisfaction = Math.min(100, m.satisfaction + 5)
+          m.influence *= 0.95
+        }
       })
 
       gameStore.triggerEvent({
         id: 112,
         name: "Levée de fonds réussie",
-        description: `100k FCFA injectés. Un nouvel investisseur rejoint le board (5%).`,
+        description: `100k FCFA injectés. ${stakeholderName} a pris ou augmenté sa participation de 5%.`,
         type: "gain",
         impactValue: amount,
         icon: "💰",
@@ -1091,18 +1103,33 @@ export const useCompanyStore = defineStore('company', {
     /** Vendre des parts au Board (le CEO récupère du cash perso) */
     sellShares(percent: number) {
       if (!this.company.ceo) return false
-      const currentCeoShare = (1 - this.company.investorShare) * 100
+      const currentCeoShare = this.ceoShare
       if (currentCeoShare - percent < 10) return false // Le CEO doit garder 10%
 
       const gain = percent * this.company.sharePrice * 0.9 // 10% de frais de transaction
       this.company.ceo.bankBalance += gain
       this.company.investorShare += (percent / 100)
 
-      // Dilution chez les investisseurs existants
-      const major = this.boardMembers[0]
-      if (major) {
-        major.sharePercent += percent
+      // Revente à quelqu'un du board ou nouvel entrant
+      const isNew = Math.random() < 0.5
+      if (isNew || this.boardMembers.length === 0) {
+        const newId = Math.max(0, ...this.boardMembers.map(m => m.id)) + 1
+        this.boardMembers.push({
+          id: newId,
+          name: `Actionnaire #${newId}`,
+          role: 'Associé',
+          influence: percent / 100,
+          satisfaction: 70,
+          personality: 'balanced',
+          icon: '👥',
+          sharePercent: percent,
+          lastVote: 'none'
+        })
+      } else {
+        const existing = this.boardMembers[Math.floor(Math.random() * this.boardMembers.length)]
+        existing.sharePercent += percent
       }
+
       return true
     },
 
