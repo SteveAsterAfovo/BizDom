@@ -104,7 +104,8 @@ const navLinks = [
       <!-- Global Header (Fixed) -->
       <GlobalHeader />
 
-      <main class="flex-1 p-4 sm:p-6 lg:p-10 pt-24"> <!-- pt-24 to account for fixed GlobalHeader -->
+      <main class="flex-1 p-10 pt-32">
+        <!-- pt-32 to account for fixed GlobalHeader and give breathing room -->
         <slot />
       </main>
 
