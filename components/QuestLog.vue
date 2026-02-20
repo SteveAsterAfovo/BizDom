@@ -51,7 +51,7 @@ function formatCurrency(value: number): string {
         </button>
       </header>
 
-      <div class="space-y-4 relative z-10">
+      <div class="space-y-4 relative z-10 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
         <div v-for="quest in questStore.activeQuests" :key="quest.id"
           class="group p-4 rounded-[1.5rem] border transition-all duration-300 relative overflow-hidden" :class="[
             quest.completed

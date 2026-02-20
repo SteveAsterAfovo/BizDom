@@ -130,9 +130,10 @@ function formatImpact(): string {
               </div>
             </div>
 
-            <button class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors border"
+            <button
+              class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all border relative z-50 hover:scale-110 active:scale-90"
               :class="gameStore.darkMode ? 'text-dark-500 hover:text-white border-white/5 bg-dark-850' : 'text-slate-400 hover:text-slate-900 border-slate-100 bg-slate-50'"
-              @click="gameStore.dismissEvent()">
+              @click.stop="gameStore.dismissEvent()">
               ✕
             </button>
           </div>

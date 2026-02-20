@@ -176,10 +176,10 @@ useHead({
                   </div>
                 </div>
                 <button v-if="isOwned(item.id)" @click="companyStore.repairInfrastructure(item.id)"
-                  :disabled="!canAfford(500) || gameStore.isPaused || item.condition >= 100"
+                  :disabled="!canAfford(Math.max(50, Math.round((100 - item.condition) * 10))) || gameStore.isPaused || item.condition >= 100"
                   class="mt-2 w-full py-2.5 rounded-xl bg-dark-800/10 border border-dark-700/20 text-[9px] font-black uppercase tracking-widest text-dark-500 hover:text-white hover:bg-accent-600 hover:border-accent-500 transition-all disabled:opacity-20">
                   <span v-if="item.condition >= 100">✨ Parfait État</span>
-                  <span v-else>🔧 Maintenance (500 FCFA)</span>
+                  <span v-else>🔧 Maintenance ({{ Math.max(50, Math.round((100 - item.condition) * 10)) }} FCFA)</span>
                 </button>
               </div>
             </div>

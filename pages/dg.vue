@@ -36,6 +36,12 @@ useHead({
         :class="gameStore.darkMode ? 'text-dark-400' : 'text-slate-400'">
         Vision stratégique & Climat social
       </p>
+      <div class="mt-4 flex justify-center lg:justify-start">
+        <span
+          class="px-3 py-1 rounded-full bg-accent-500/10 border border-accent-500/20 text-accent-400 text-[8px] font-black uppercase tracking-widest animate-pulse">
+          Flux Temps Réel Actif v9.0
+        </span>
+      </div>
     </header>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -95,32 +101,65 @@ useHead({
             :class="gameStore.darkMode ? 'bg-dark-900 border-accent-500/10' : 'bg-white border-slate-200'">
             <h3 class="font-black italic uppercase tracking-tighter text-xl mb-8"
               :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">
-              Climat Social
+              👥 Climat Social
             </h3>
 
             <div class="grid grid-cols-2 gap-4 mb-8">
               <div class="p-5 rounded-3xl border"
                 :class="gameStore.darkMode ? 'bg-dark-850 border-white/5' : 'bg-slate-50 border-slate-100'">
                 <p class="text-[9px] text-dark-500 font-black uppercase tracking-widest mb-1">Sentiment</p>
-                <p class="text-lg font-black italic"
-                  :class="companyStore.productivity > 0.8 ? 'text-gain-500' : 'text-loss-500'">
-                  {{ companyStore.productivity > 0.8 ? 'EXCELLENT' : companyStore.productivity > 0.5 ? 'STABLE' :
-                    'CRITIQUE' }}
-                </p>
+                <div class="flex items-center gap-2">
+                  <p class="text-lg font-black italic"
+                    :class="companyStore.productivity > 0.8 ? 'text-gain-500' : companyStore.productivity > 0.5 ? 'text-accent-500' : 'text-loss-500'">
+                    {{ companyStore.productivity > 0.8 ? 'EXCELLENT' : companyStore.productivity > 0.5 ? 'STABLE' :
+                      'CRITIQUE' }}
+                  </p>
+                  <span v-if="companyStore.globalMotivation > 60" class="text-gain-500 animate-bounce">↑</span>
+                  <span v-else-if="companyStore.globalMotivation < 40" class="text-loss-500 animate-bounce">↓</span>
+                </div>
               </div>
               <div class="p-5 rounded-3xl border"
                 :class="gameStore.darkMode ? 'bg-dark-850 border-white/5' : 'bg-slate-50 border-slate-100'">
-                <p class="text-[9px] text-dark-500 font-black uppercase tracking-widest mb-1">Mécontents</p>
-                <p class="text-lg font-black italic text-warn-500">
-                  {{companyStore.employees.filter(e => e.motivation < 40).length}} </p>
+                <p class="text-[9px] text-dark-500 font-black uppercase tracking-widest mb-1">Indice de Révolte</p>
+                <div class="flex items-center gap-2">
+                  <p class="text-lg font-black italic text-warn-500">
+                    {{companyStore.employees.filter(e => e.motivation < 45).length}} </p>
+                      <span class="text-[8px] font-black text-dark-500 uppercase tracking-widest">MÉCONTENANTS</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Liste détaillée des mécontents (v9.1) -->
+            <div v-if="companyStore.employees.filter(e => e.motivation < 45).length > 0" class="mb-8 space-y-2">
+              <p class="text-[9px] font-black text-dark-500 uppercase tracking-widest mb-2">Focus Employés à Risque</p>
+              <div v-for="emp in companyStore.employees.filter(e => e.motivation < 45)" :key="emp.id"
+                class="flex items-center justify-between p-3 rounded-2xl bg-loss-500/5 border border-loss-500/10">
+                <div class="flex items-center gap-3">
+                  <span
+                    class="w-8 h-8 rounded-full bg-dark-800 flex items-center justify-center text-[10px] font-black italic text-white shadow-sm border border-white/5">
+                    {{ emp.name.charAt(0) }}{{ emp.name.split(' ')[1]?.charAt(0) }}
+                  </span>
+                  <span class="text-xs font-black italic text-dark-400">{{ emp.name }}</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="w-24 h-1.5 bg-dark-700/20 rounded-full overflow-hidden">
+                    <div class="h-full bg-loss-500 shadow-glow-loss transition-all duration-300"
+                      :style="{ width: `${emp.motivation}%` }"></div>
+                  </div>
+                  <span class="text-[10px] font-black text-loss-500">{{ Math.round(emp.motivation) }}%</span>
+                </div>
               </div>
             </div>
 
             <div class="space-y-4">
               <div class="flex justify-between items-end text-[10px] font-black uppercase tracking-widest leading-none">
-                <span class="text-dark-500 italic">Risque de Grève</span>
+                <div class="flex items-center gap-2">
+                  <span class="text-dark-500 italic">Risque de Grève Global</span>
+                  <span v-if="companyStore.strikeRisk > 30"
+                    class="text-loss-500 animate-pulse text-[8px] font-black">HAUT RISQUE</span>
+                </div>
                 <span :class="companyStore.strikeRisk > 50 ? 'text-loss-500' : 'text-accent-500'">{{
-                  companyStore.strikeRisk.toFixed(0) }}%</span>
+                  companyStore.strikeRisk.toFixed(2) }}%</span>
               </div>
               <div class="w-full h-3 bg-dark-700/20 rounded-full overflow-hidden border border-dark-700/10">
                 <div class="h-full rounded-full transition-all duration-1000"
@@ -166,18 +205,34 @@ useHead({
           </h3>
           <div class="p-6 rounded-3xl border mb-8"
             :class="gameStore.darkMode ? 'bg-dark-850 border-dark-700 shadow-sm' : 'bg-slate-50 border-slate-100 shadow-sm'">
-            <p class="text-[9px] text-dark-500 font-black uppercase tracking-[0.2em] mb-2 leading-none">Croissance
-              Organique</p>
-            <span class="text-3xl font-black italic text-gain-500">
-              +{{ (companyStore.market.organicGrowth * 100).toFixed(2) }}%
-            </span>
+            <div class="flex justify-between items-end mb-4">
+              <div>
+                <p class="text-[9px] text-dark-500 font-black uppercase tracking-[0.2em] mb-2 leading-none">Part de
+                  Marché</p>
+                <span class="text-3xl font-black italic text-accent-500">
+                  {{ companyStore.playerMarketShare.toFixed(2) }}%
+                </span>
+              </div>
+              <div class="text-right">
+                <p class="text-[9px] text-dark-500 font-black uppercase tracking-[0.2em] mb-2 leading-none">Croissance
+                </p>
+                <span class="text-xl font-black italic text-gain-500">
+                  {{ (companyStore.market.organicGrowth * 100).toFixed(2) }}%
+                </span>
+              </div>
+            </div>
+            <div class="w-full h-3 bg-dark-700/20 rounded-full overflow-hidden border border-dark-700/10">
+              <div class="h-full bg-gain-500 shadow-glow-gain transition-all duration-1000"
+                :style="{ width: `${companyStore.playerMarketShare}%` }"></div>
+            </div>
           </div>
           <div class="space-y-5">
             <div v-for="s in specialties" :key="s" class="space-y-2">
               <div class="flex justify-between text-[10px] uppercase font-black tracking-[0.2em] leading-none">
                 <span class="text-dark-400 italic">{{ s }}</span>
-                <span :class="getDemandColor(companyStore.market.demands[s])">{{ companyStore.market.demands[s]
-                }}%</span>
+                <span :class="getDemandColor(companyStore.market.demands[s])" class="transition-all duration-1000">
+                  {{ companyStore.market.demands[s] }}%
+                </span>
               </div>
               <div class="w-full h-2 bg-dark-700/10 rounded-full overflow-hidden">
                 <div class="h-full bg-accent-500 shadow-glow-accent transition-all duration-1000"

@@ -18,7 +18,7 @@ function formatCurrency(value: number): string {
 const sellAmount = ref(5)
 
 function handleSellShares() {
-  if (companyStore.sellShares(sellAmount.value)) {
+  if (companyStore.sellSharesToMarket(sellAmount.value)) {
     // Succès
   }
 }
@@ -112,7 +112,7 @@ useHead({
               transaction et dilution accélérée.</p>
           </div>
 
-          <button @click="handleSellShares" :disabled="companyStore.ceoShare - sellAmount < 10 || gameStore.isPaused"
+          <button @click="handleSellShares" :disabled="companyStore.ceoShare - sellAmount < 20 || gameStore.isPaused"
             class="w-full btn-primary py-5 rounded-2xl font-black italic text-[10px] uppercase tracking-[0.2em] shadow-glow-accent/20 disabled:opacity-20">
             Confirmer la Transaction
           </button>

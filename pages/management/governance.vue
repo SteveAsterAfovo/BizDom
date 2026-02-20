@@ -154,9 +154,10 @@ useHead({
             <div v-if="meetingStatus !== 'idle'"
               class="absolute inset-0 z-10 flex items-center justify-center backdrop-blur-md transition-all animate-fade-in bg-dark-950/40">
               <div v-if="meetingStatus === 'voting'" class="animate-spin text-2xl">⏳</div>
-              <div v-else :class="member.lastVote === 'yes' ? 'bg-gain-600' : 'bg-loss-600'"
+              <div v-else
+                :class="member.lastVote === 'yes' ? 'bg-gain-600' : member.lastVote === 'no' ? 'bg-loss-600' : 'bg-dark-600'"
                 class="px-6 py-2.5 rounded-full font-black text-[10px] uppercase shadow-2xl text-white tracking-widest border border-white/10">
-                {{ member.lastVote === 'yes' ? 'ACCEPTE ✓' : 'REFUSE ✕' }}
+                {{ member.lastVote === 'yes' ? 'ACCEPTE ✓' : member.lastVote === 'no' ? 'REFUSE ✕' : 'ABSTENTION ⚪' }}
               </div>
             </div>
 
@@ -182,6 +183,22 @@ useHead({
                 :class="member.satisfaction > 60 ? 'text-gain-500' : 'text-loss-500'">
                 {{ member.satisfaction }}%
               </div>
+            </div>
+
+            <!-- Trading Actions (Hover or small icons) -->
+            <div class="absolute bottom-2 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button @click.stop="companyStore.sellSharesToMember(member.id, 1)"
+                :disabled="companyStore.ceoShare - 1 < 20"
+                class="text-[8px] font-black bg-accent-500/10 hover:bg-accent-500 text-accent-500 hover:text-white px-2 py-1 rounded-md border border-accent-500/20 transition-all"
+                title="Vendre 1%">
+                VENDRE
+              </button>
+              <button @click.stop="companyStore.buySharesFromMember(member.id, 1)"
+                :disabled="companyStore.company.ceo?.bankBalance < companyStore.company.sharePrice"
+                class="text-[8px] font-black bg-gain-500/10 hover:bg-gain-500 text-gain-500 hover:text-white px-2 py-1 rounded-md border border-gain-500/20 transition-all"
+                title="Racheter 1%">
+                RACHETER
+              </button>
             </div>
           </div>
         </div>

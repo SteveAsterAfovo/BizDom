@@ -9,6 +9,7 @@ import type { GameEvent, MonthlyReport } from '~/types'
 import eventsData from '~/mock/events.json'
 
 const allEvents: GameEvent[] = eventsData as GameEvent[]
+let globalTickInterval: any = null
 
 export function useSimulation() {
   const gameStore = useGameStore()
@@ -206,19 +207,23 @@ export function useSimulation() {
   }
 
   // ── Simulation Temps Réel ──
-  let tickInterval: any = null
+  // Note: tickInterval est déplacé en dehors de useSimulation pour garantir un Singleton global
 
   function startRealTimeSimulation() {
-    if (tickInterval) return
+    if (globalTickInterval) return
+
+    console.log("🚀 Simulation BIZDOM démarrée")
 
     // Un tick toutes les secondes pour une fluidité totale sur une heure
     const tickRate = 1000
 
-    tickInterval = setInterval(() => {
+    globalTickInterval = setInterval(() => {
+      // Mettre à jour le timestamp systématiquement pour la réactivité UI (expireAt, etc)
+      gameStore.now = Date.now()
+
       if (gameStore.isPaused || gameStore.gameOver) return
 
       // On avance d'une fraction de jour (1h = 30j, donc 1s = 30/3600 j = 1/120 j)
-      // Mais pour rester simple, on va garder applyTick avec la fraction de MOIS écoulée par seconde.
       // 1 mois = 3600 secondes. Donc 1 seconde = 1/3600 mois.
 
       // Appliquer le tick financier/fatigue (1/3600ème du mois)
@@ -256,15 +261,16 @@ export function useSimulation() {
   }
 
   function stopRealTimeSimulation() {
-    if (tickInterval) {
-      clearInterval(tickInterval)
-      tickInterval = null
+    if (globalTickInterval) {
+      clearInterval(globalTickInterval)
+      globalTickInterval = null
+      console.log("🛑 Simulation BIZDOM arrêtée")
     }
   }
 
   // Surveiller le changement de vitesse pour redémarrer l'intervalle si besoin
-  watch(() => gameStore.gameSpeed, (newSpeed) => {
-    if (tickInterval) {
+  watch(() => gameStore.gameSpeed, () => {
+    if (globalTickInterval) {
       stopRealTimeSimulation()
       startRealTimeSimulation()
     }

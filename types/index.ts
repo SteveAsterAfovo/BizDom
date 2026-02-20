@@ -30,7 +30,7 @@ export interface BoardMember {
     personality: 'conservative' | 'aggressive' | 'balanced'
     icon: string
     sharePercent: number   // Part détenue (%)
-    lastVote: 'yes' | 'no' | 'none' // Position lors du dernier vote
+    lastVote: 'yes' | 'no' | 'none' | 'abstain' // Position lors du dernier vote
 }
 
 export interface StrategicDecision {

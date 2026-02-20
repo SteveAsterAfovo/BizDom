@@ -23,6 +23,8 @@ interface GameStoreState {
   darkMode: boolean
   isSidebarOpen: boolean
   isMobileMenuOpen: boolean
+  now: number
+  SECONDS_PER_GAME_DAY: number
 }
 
 export const useGameStore = defineStore('game', {
@@ -32,6 +34,7 @@ export const useGameStore = defineStore('game', {
     currentDay: 0,
     gameSpeed: 1,
     timerDuration: 3600000, // 1 heure = 1 mois
+    SECONDS_PER_GAME_DAY: 120, // 3600 / 30
     reports: [],
     eventHistory: [],
     currentEvent: null,
@@ -42,6 +45,7 @@ export const useGameStore = defineStore('game', {
     darkMode: true,
     isSidebarOpen: true,
     isMobileMenuOpen: false,
+    now: Date.now(),
   }),
 
   getters: {

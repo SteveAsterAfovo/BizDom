@@ -58,7 +58,7 @@ onMounted(() => {
 
 function getTimeLeft(expiresAt?: number) {
   if (!expiresAt) return ''
-  const diff = expiresAt - Date.now()
+  const diff = expiresAt - gameStore.now
   if (diff <= 0) return 'Expiré'
 
   const days = Math.floor(diff / (24 * 60 * 60 * 1000))
@@ -66,7 +66,35 @@ function getTimeLeft(expiresAt?: number) {
 
   if (days > 0) return `${days}j ${hours}h`
   const minutes = Math.floor((diff % (60 * 60 * 1000)) / (60 * 1000))
-  return `${hours}h ${minutes}m`
+  const seconds = Math.floor((diff % (60 * 1000)) / 1000)
+  return `${hours}h ${minutes}m ${seconds}s`
+}
+
+function getRemainingDays(project: Project) {
+  if (project.status !== 'active') return `${project.duration} Jours`
+
+  const efficiency = getProjectEfficiency(project) / 100 || 1
+  const remainingPercent = 100 - project.progress
+
+  // 1 mois = 3600s, donc 1 jour = 120s (SECONDS_PER_GAME_DAY)
+  // Durée totale en secondes réelles = project.duration * 120
+  // Progression restante = 100 - project.progress
+  // Temps restant théorique = (remainingPercent/100) * (project.duration * 120)
+  // Temps réel (ajusté par efficacité) = Temps théorique / efficiency
+
+  const totalSecondsRemaining = ((remainingPercent / 100) * (project.duration * 120)) / efficiency
+
+  const hours = Math.floor(totalSecondsRemaining / 3600)
+  const minutes = Math.floor((totalSecondsRemaining % 3600) / 60)
+  const seconds = Math.floor(totalSecondsRemaining % 60)
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m ${seconds}s`
+  }
+  if (minutes > 0) {
+    return `${minutes}m ${seconds}s`
+  }
+  return `${seconds}s`
 }
 
 // SEO
@@ -139,11 +167,14 @@ useHead({
               <p class="text-[8px] font-black uppercase tracking-widest text-dark-500 mb-1">Gain Estimé</p>
               <p class="text-sm font-black italic text-gain-500">{{ formatCurrency(project.reward) }}</p>
             </div>
-            <div class="p-4 rounded-2xl border"
-              :class="gameStore.darkMode ? 'bg-dark-850 border-white/5' : 'bg-slate-50 border-slate-100'">
-              <p class="text-[8px] font-black uppercase tracking-widest text-dark-500 mb-1">Délai</p>
-              <p class="text-sm font-black italic" :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">{{
-                project.duration }} Jours</p>
+            <div class="p-4 rounded-2xl border transition-all"
+              :class="project.status === 'active' ? (gameStore.darkMode ? 'bg-accent-500/5 border-accent-500/20' : 'bg-accent-50 border-accent-100') : (gameStore.darkMode ? 'bg-dark-850 border-white/5' : 'bg-slate-50 border-slate-100')">
+              <p class="text-[8px] font-black uppercase tracking-widest text-dark-500 mb-1">
+                {{ project.status === 'active' ? 'Restant' : 'Délai' }}
+              </p>
+              <p class="text-sm font-black italic" :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">
+                {{ getRemainingDays(project) }}
+              </p>
             </div>
             <div class="p-4 rounded-2xl border"
               :class="gameStore.darkMode ? 'bg-dark-850 border-white/5' : 'bg-slate-50 border-slate-100'">
@@ -217,10 +248,31 @@ useHead({
           </div>
         </div>
 
-        <button v-if="project.status !== 'completed'" @click="openProjectModal(project)" :disabled="gameStore.isPaused"
-          class="w-full py-5 rounded-2xl font-black italic text-[11px] uppercase tracking-[0.2em] transition-all bg-accent-600/5 text-accent-500 border-2 border-accent-500/20 hover:bg-accent-600 hover:text-white hover:border-accent-500 hover:shadow-glow-accent active:scale-95 shadow-lg disabled:opacity-20 disabled:grayscale">
-          {{ project.assignedEmployees.length > 0 ? 'Gérer le Staff' : 'Assigner une Equipe' }}
-        </button>
+        <div v-if="project.status !== 'completed'" class="flex gap-3">
+          <!-- Bouton Renoncer (Annulation) -->
+          <button @click="companyStore.cancelProject(project.id)" :disabled="gameStore.isPaused"
+            class="w-12 h-auto rounded-2xl flex items-center justify-center transition-all bg-dark-800/20 text-dark-500 border-2 border-white/5 hover:bg-loss-500/10 hover:text-loss-500 hover:border-loss-500/20 active:scale-95 disabled:opacity-20"
+            title="Renoncer au projet">
+            🚫
+          </button>
+
+          <button @click="openProjectModal(project)" :disabled="gameStore.isPaused"
+            class="flex-1 py-5 rounded-2xl font-black italic text-[11px] uppercase tracking-[0.2em] transition-all bg-dark-800/40 text-dark-400 border-2 border-white/5 hover:bg-dark-800 hover:text-white active:scale-95 disabled:opacity-20">
+            {{ project.assignedEmployees.length > 0 ? 'Staff' : 'Equipe' }}
+          </button>
+
+          <button v-if="project.status === 'active'" @click="companyStore.stopProject(project.id)"
+            :disabled="gameStore.isPaused"
+            class="flex-[2] py-5 rounded-2xl font-black italic text-[11px] uppercase tracking-[0.2em] transition-all bg-loss-500/10 text-loss-500 border-2 border-loss-500/20 hover:bg-loss-500 hover:text-white hover:shadow-glow-loss active:scale-95 disabled:opacity-20">
+            Pause Production ⏸
+          </button>
+
+          <button v-else @click="companyStore.startProject(project.id)"
+            :disabled="gameStore.isPaused || project.assignedEmployees.length < project.teamSize"
+            class="flex-[2] py-5 rounded-2xl font-black italic text-[11px] uppercase tracking-[0.2em] transition-all bg-accent-600/5 text-accent-500 border-2 border-accent-500/20 hover:bg-accent-600 hover:text-white hover:border-accent-500 hover:shadow-glow-accent active:scale-95 shadow-lg disabled:opacity-20 disabled:grayscale">
+            Lancer Production 🚀
+          </button>
+        </div>
       </div>
     </div>
 
@@ -285,7 +337,7 @@ useHead({
                     ? (gameStore.darkMode ? 'bg-accent-600/10 border-accent-500 text-accent-400 shadow-glow-accent/5' : 'bg-accent-50 border-accent-200 text-accent-700 shadow-lg shadow-accent-500/10')
                     : (gameStore.darkMode ? 'bg-dark-850/50 border-white/5 text-dark-500 hover:border-dark-700' : 'bg-white border-slate-100 text-slate-400 hover:border-slate-300 shadow-sm')
                 ]"
-                :disabled="!selectedEmployees.includes(emp.id) && selectedEmployees.length >= (selectedProject?.teamSize || 0)">
+                :disabled="(!selectedEmployees.includes(emp.id) && selectedEmployees.length >= (selectedProject?.teamSize || 0)) || (companyStore.activeProjects.some(p => p.id !== selectedProject?.id && p.status !== 'completed' && p.assignedEmployees.includes(emp.id)))">
 
                 <div class="flex items-center gap-5">
                   <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl transition-transform"
@@ -301,6 +353,11 @@ useHead({
                       <span class="w-1 h-1 rounded-full"
                         :class="gameStore.darkMode ? 'bg-dark-700' : 'bg-slate-300'"></span>
                       <span class="text-dark-500">{{ emp.specialty }}</span>
+                      <template
+                        v-if="companyStore.activeProjects.some(p => p.id !== selectedProject?.id && p.status !== 'completed' && p.assignedEmployees.includes(emp.id))">
+                        <span class="w-1 h-1 rounded-full bg-loss-500"></span>
+                        <span class="text-loss-500 font-black animate-pulse">OCCUPÉ</span>
+                      </template>
                     </div>
                   </div>
                 </div>
@@ -309,7 +366,8 @@ useHead({
                   <div class="text-right hidden sm:block">
                     <p class="text-[8px] font-black uppercase tracking-widest text-dark-600">Motivation</p>
                     <p class="text-xs font-black italic"
-                      :class="emp.motivation > 70 ? 'text-gain-500' : 'text-loss-500'">{{ emp.motivation }}%</p>
+                      :class="emp.motivation > 70 ? 'text-gain-500' : 'text-loss-500'">{{
+                        emp.motivation }}%</p>
                   </div>
                   <div v-if="selectedEmployees.includes(emp.id)"
                     class="w-8 h-8 rounded-2xl flex items-center justify-center shadow-lg transform transition-transform animate-scale-in"

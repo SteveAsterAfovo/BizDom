@@ -269,7 +269,10 @@ export const useCompanyStore = defineStore('company', {
     strikeRisk(): number {
       const fatigueFactor = Math.max(0, this.averageFatigue - 50) * 2 // Augmente après 50% fatigue
       const perkFactor = Math.max(0, 50 - (this.company.activePerks.length * 15)) // Moins de 3 perks = risque
-      return Math.min(100, fatigueFactor + perkFactor)
+      const baseRisk = Math.min(100, fatigueFactor + perkFactor)
+      // Bruit visuel pour le "temps réel" (±1%)
+      const noise = (Math.random() - 0.5) * 2
+      return Math.min(100, Math.max(0, baseRisk + noise))
     },
 
     /** Productivité ajustée par l'infrastructure (dépendances) */
@@ -641,11 +644,13 @@ export const useCompanyStore = defineStore('company', {
 
     /** Mettre à jour les besoins du marché */
     updateMarketDemands() {
+      if (!this.market.demands) return
       const specialties: EmployeeSpecialty[] = ['tech', 'sales', 'creative', 'hr', 'management']
       specialties.forEach(s => {
-        if (this.market.demands) {
-          this.market.demands[s] = Math.floor(Math.random() * 101)
-        }
+        // Fluctuations plus organiques (±2 points par tick max)
+        const current = this.market.demands[s] || 50
+        const shift = Math.floor((Math.random() - 0.5) * 4)
+        this.market.demands[s] = Math.min(100, Math.max(0, current + shift))
       })
     },
 
@@ -675,9 +680,9 @@ export const useCompanyStore = defineStore('company', {
 
       // 2. Progression des Projets & Expiration
       this.activeProjects.forEach((project: Project, idx) => {
-        // Expiration des appels d'offres (pending)
-        if (project.status === 'pending' && project.expiresAt) {
-          if (gameStore.currentMonth > project.expiresAt || (gameStore.currentMonth === project.expiresAt && gameStore.currentDay >= 28)) {
+        // Expiration des appels d'offres (pending sans équipe assignée)
+        if (project.status === 'pending' && project.assignedEmployees.length === 0 && project.expiresAt) {
+          if (Date.now() > project.expiresAt) {
             // Supprimer le projet expiré
             this.activeProjects.splice(idx, 1)
             return
@@ -688,16 +693,25 @@ export const useCompanyStore = defineStore('company', {
           const assigned = this.employees.filter(e => project.assignedEmployees.includes(e.id))
           if (assigned.length > 0) {
             // Efficacité basée sur Skill (base) + Motivation (boost) - Fatigue (malus)
+            // Normalisation : un skill moyen de 2.5 avec eff de 1.0 avance au rythme nominal (duration)
             const avgSkill = assigned.reduce((s, e) => s + e.skillLevel, 0) / assigned.length
             const avgMotivation = assigned.reduce((s, e) => s + e.motivation, 0) / assigned.length
             const avgFatigue = assigned.reduce((s, e) => s + e.fatigue, 0) / assigned.length
 
             // Calcul du multiplicateur d'efficacité (0.5 à 1.5)
-            const motivationFactor = 0.5 + (avgMotivation / 100) // 0.5 (0 mot.) à 1.5 (100 mot.)
-            const fatigueFactor = 1 - (avgFatigue / 200) // 1.0 (0 fat.) à 0.5 (100 fat.)
+            const motivationFactor = 0.5 + (avgMotivation / 100)
+            const fatigueFactor = 1 - (avgFatigue / 200)
             const efficiency = motivationFactor * fatigueFactor
 
-            const progressStep = (avgSkill / 10) * efficiency * dayFraction * (100 / project.duration)
+            // On multiplie par (avgSkill / 2.5) pour que Skill 5 = 2x speed, Skill 1 = 0.4x speed
+            const skillMultiplier = avgSkill / 2.5
+            const totalEff = efficiency * skillMultiplier
+
+            // 1 mois = 30 jours. On veut que project.duration (en jours) soit respecté si totalEff = 1
+            // progress total = 100. duration_en_mois = duration / 30.
+            // On doit gagner 100 / (duration / 30) % par MOIS.
+            // Par tick : (100 / (project.duration / 30)) * dayFraction * totalEff
+            const progressStep = (3000 / project.duration) * dayFraction * totalEff
             project.progress = Math.min(100, project.progress + progressStep)
 
             if (project.progress >= 100) {
@@ -776,8 +790,17 @@ export const useCompanyStore = defineStore('company', {
         const finalGain = Math.max(0, (fatigueGain - reduction) * dayFraction)
         emp.fatigue = Math.min(100, emp.fatigue + finalGain)
 
+        // Micro-fluctuations de motivation (Bruit émotionnel)
+        const emotionalJitter = (Math.random() - 0.5) * 0.2
+        // Dégradation progressive si fatigue élevée (> 60)
+        const fatigueDecay = emp.fatigue > 60 ? (emp.fatigue - 60) * 0.01 : 0
+        emp.motivation = Math.min(100, Math.max(0, emp.motivation + emotionalJitter - (fatigueDecay * dayFraction * 30)))
+
         // Logique de Grève (Check par seconde)
-        if (!emp.isOnStrike && emp.fatigue > 70 && Math.random() < (strikeRisk * 0.01)) {
+        // PROTECT: Un employé sur un projet actif ne peut pas partir/se mettre en grève bloquante
+        const isOnActiveProject = this.activeProjects.some(p => p.status === 'active' && p.assignedEmployees.includes(emp.id))
+
+        if (!emp.isOnStrike && emp.fatigue > 70 && !isOnActiveProject && Math.random() < (strikeRisk * 0.01)) {
           emp.isOnStrike = true
           this.generateEmployeeFeedback(emp.id) // "Je me mets en grève !"
         }
@@ -787,8 +810,8 @@ export const useCompanyStore = defineStore('company', {
           emp.strikeDuration += 1 // incrément par seconde (approximatif)
           emp.motivation = Math.max(0, emp.motivation - 0.5) // Désespoir
 
-          // Démission après 2 minutes de grève (120s)
-          if (emp.strikeDuration > 120) {
+          // Démission après 2 minutes de grève (120s) - Sauf si sur projet critique
+          if (emp.strikeDuration > 120 && !isOnActiveProject) {
             this.fireEmployee(emp.id)
             gameStore.triggerEvent({
               id: 99,
@@ -837,6 +860,22 @@ export const useCompanyStore = defineStore('company', {
         this.market.organicGrowth = 0.001 // Croissance légère
       }
 
+      // 4. Volatilité du Marché (Fluctuations réelles)
+      this.competitors.forEach(c => {
+        // Variation aléatoire augmentée pour visibilité : entre -0.5% et +0.5% par tick
+        const jitter = (Math.random() - 0.5) * 0.5 * (dayFraction * 3600) // dayFraction * 3600 est environ 1 si tick=1s
+        c.marketShare = Math.max(1, Math.min(45, c.marketShare + jitter))
+      })
+
+      // 5. Volatilité Finance (Share Price évolue par seconde)
+      const scoreTrend = (this.generalScore / 500) - 1 // -1 to 1 range approx
+      const priceJitter = (Math.random() - 0.5) * 50 + (scoreTrend * 20)
+      this.company.sharePrice = Math.max(1000, this.company.sharePrice + (priceJitter * dayFraction))
+
+      // 6. Croissance Organique Fluctuante & Demandes
+      const growthJitter = (Math.random() - 0.5) * 0.0005
+      this.market.organicGrowth = Math.max(-0.01, Math.min(0.01, this.market.organicGrowth + growthJitter))
+      this.updateMarketDemands()
       // Acquisition client
       const monthlyNew = this.estimatedNewCustomers
       if (monthlyNew > 0) {
@@ -864,6 +903,9 @@ export const useCompanyStore = defineStore('company', {
       if (this.activeProjects.length < 5 && Math.random() < (dayFraction * 0.5)) {
         this.generateProject()
       }
+
+      // 7. Décisions autonomes du Board
+      this.runAutonomousBoardDecisions()
     },
 
     /** Acheter une infrastructure / équipement */
@@ -893,43 +935,6 @@ export const useCompanyStore = defineStore('company', {
       }
     },
 
-    /** Soumettre une décision au Board */
-    submitStrategicDecision(decision: StrategicDecision) {
-      // Calculer l'accord du Board et enregistrer les votes
-      let totalApproval = 0
-      this.boardMembers.forEach(m => {
-        let memberScore = m.satisfaction
-        if (decision.risk > 0.5 && m.personality === 'conservative') memberScore -= 20
-        if (decision.risk > 0.5 && m.personality === 'aggressive') memberScore += 10
-
-        const approved = memberScore >= 50
-        m.lastVote = approved ? 'yes' : 'no'
-
-        if (approved) totalApproval += m.influence
-      })
-
-      const approvalScore = (totalApproval / this.boardMembers.reduce((s, m) => s + m.influence, 0)) * 100
-
-      if (approvalScore >= (decision.boardSupport || 50)) {
-        // Appliquer impacts
-        if (decision.impacts.cash) this.updateCash(decision.impacts.cash)
-        if (decision.impacts.marketShare) {
-          this.market.customerBase += Math.round(this.market.customerBase * (decision.impacts.marketShare / 100))
-        }
-        this.boardMembers.forEach(m => {
-          if (m.lastVote === 'yes') m.satisfaction = Math.min(100, m.satisfaction + 5)
-          else m.satisfaction = Math.max(0, m.satisfaction - 2)
-        })
-        return true
-      } else {
-        // Rejet
-        this.boardMembers.forEach(m => {
-          if (m.lastVote === 'no') m.satisfaction = Math.min(100, m.satisfaction + 2)
-          else m.satisfaction = Math.max(0, m.satisfaction - 10)
-        })
-        return false
-      }
-    },
 
     resetCompany() {
       this.company = {
@@ -1074,10 +1079,15 @@ export const useCompanyStore = defineStore('company', {
       const project = this.activeProjects.find((p: Project) => p.id === projectId)
       if (!project) return
 
-      project.assignedEmployees = employeeIds
+      // Validation de l'exclusivité : un employé ne peut pas être sur deux projets à la fois
+      const otherActiveProjects = this.activeProjects.filter(p => p.id !== projectId && p.status !== 'completed')
+      const alreadyAssignedIds = otherActiveProjects.flatMap(p => p.assignedEmployees)
+
+      const filteredEmployeeIds = employeeIds.filter(id => !alreadyAssignedIds.includes(id))
+      project.assignedEmployees = filteredEmployeeIds
 
       // Validation de la composition de l'équipe
-      const assigned = this.employees.filter(e => employeeIds.includes(e.id))
+      const assigned = this.employees.filter(e => filteredEmployeeIds.includes(e.id))
 
       let isValid = true
       const reqSpecs = project.requiredSpecialties
@@ -1091,18 +1101,23 @@ export const useCompanyStore = defineStore('company', {
       }
 
       if (isValid && assigned.length >= project.teamSize) {
-        project.status = 'active'
+        // Le projet est prêt, mais on attend le clic manuel pour "active"
+        project.status = 'pending'
       } else {
-        project.status = 'pending' // Reste en attente si incomplet
+        project.status = 'pending'
       }
     },
 
     // ─── MAINTENANCE ───
     repairInfrastructure(itemId: string) {
       const item = this.infrastructureCatalogue.find(i => i.id === itemId)
-      if (item && item.condition < 100 && this.company.cash >= 500) {
-        this.company.cash -= 500
-        item.condition = 100
+      if (item && item.condition < 100) {
+        // Coût dynamique : 10 FCFA par % de santé manquante, minimum 50
+        const cost = Math.max(50, Math.round((100 - item.condition) * 10))
+        if (this.company.cash >= cost) {
+          this.company.cash -= cost
+          item.condition = 100
+        }
       }
     },
 
@@ -1233,7 +1248,7 @@ export const useCompanyStore = defineStore('company', {
     // ── Actions d'Actionnariat ──
 
     /** Racheter les parts d'un actionnaire */
-    buyShares(memberId: number, percent: number) {
+    buySharesFromMember(memberId: number, percent: number) {
       const member = this.boardMembers.find(m => m.id === memberId)
       if (!member || !this.company.ceo) return false
 
@@ -1241,56 +1256,134 @@ export const useCompanyStore = defineStore('company', {
       if (this.company.ceo.bankBalance < cost) return false
       if (member.sharePercent < percent) return false
 
+      // Refus si satisfaction basse ou si c'est un "agressif" qui veut garder son pouvoir
+      let refusalProb = member.satisfaction < 40 ? 0.7 : 0.1
+      if (member.personality === 'aggressive') refusalProb += 0.2
+
+      if (Math.random() < refusalProb) {
+        useGameStore().triggerEvent({
+          id: 771,
+          name: "Actionnaire Hostile",
+          description: `${member.name} refuse de vous céder ses parts. "Je préfère garder mon influence".`,
+          type: "loss",
+          impactValue: 0,
+          icon: "🚫",
+          probability: 1
+        })
+        return false
+      }
+
       this.company.ceo.bankBalance -= cost
       member.sharePercent -= percent
-      this.company.investorShare -= (percent / 100)
-
-      if (member.sharePercent <= 0) {
-        this.boardMembers = this.boardMembers.filter(m => m.id !== memberId)
-      }
+      member.satisfaction = Math.max(0, member.satisfaction - 5)
       return true
     },
 
-    /** Vendre des parts au Board (le CEO récupère du cash perso) */
-    sellShares(percent: number) {
-      if (!this.company.ceo) return false
-      const currentCeoShare = this.ceoShare
-      if (currentCeoShare - percent < 10) return false // Le CEO doit garder 10%
+    sellSharesToMember(memberId: number, percent: number) {
+      const member = this.boardMembers.find(m => m.id === memberId)
+      // LIMITE CEO : Toujours garder au moins 20%
+      if (!member || this.ceoShare - percent < 20 || !this.company.ceo) return false
 
-      const gain = percent * this.company.sharePrice * 0.9 // 10% de frais de transaction
+      const gain = percent * this.company.sharePrice * 0.9 // 10% frais
       this.company.ceo.bankBalance += gain
-      this.company.investorShare += (percent / 100)
-
-      // Revente à quelqu'un du board ou nouvel entrant
-      const isNew = Math.random() < 0.5
-      if (isNew || this.boardMembers.length === 0) {
-        const newId = Math.max(0, ...this.boardMembers.map(m => m.id)) + 1
-        this.boardMembers.push({
-          id: newId,
-          name: `Actionnaire #${newId}`,
-          role: 'Associé',
-          influence: percent / 100,
-          satisfaction: 70,
-          personality: 'balanced',
-          icon: '👥',
-          sharePercent: percent,
-          lastVote: 'none'
-        })
-      } else {
-        const existing = this.boardMembers[Math.floor(Math.random() * this.boardMembers.length)]
-        existing.sharePercent += percent
-      }
+      member.sharePercent += percent
+      member.satisfaction = Math.min(100, member.satisfaction + 10) // Plus d'influence = plus content
 
       return true
+    },
+
+    /** Vendre des parts au marché (général) */
+    sellSharesToMarket(percent: number) {
+      // LIMITE CEO : Toujours garder au moins 20%
+      if (!this.company.ceo || this.ceoShare - percent < 20) return false
+
+      const gain = percent * this.company.sharePrice * 0.85 // 15% frais pour appel public
+      this.company.ceo.bankBalance += gain
+      // Nouvel actionnaire aléatoire
+      const newId = Math.max(0, ...this.boardMembers.map(m => m.id)) + 1
+      this.boardMembers.push({
+        id: newId,
+        name: `Investisseur #${newId}`,
+        role: 'Associé Passif',
+        influence: 0.1,
+        satisfaction: 70,
+        personality: 'balanced',
+        icon: '👥',
+        sharePercent: percent,
+        lastVote: 'none'
+      })
+      return true
+    },
+
+    /** Soumettre une décision stratégique avec résistance du Board */
+    submitStrategicDecision(decision: StrategicDecision): boolean {
+      let yesVotes = 0
+      let totalShares = 0
+
+      this.boardMembers.forEach(member => {
+        totalShares += member.sharePercent
+
+        // Logique de vote : Satisfaction + Personnalité vs Risque
+        let baseProb = member.satisfaction / 100
+        if (member.personality === 'conservative') baseProb -= (decision.risk * 0.6)
+        if (member.personality === 'aggressive') baseProb += (decision.risk * 0.4)
+
+        const roll = Math.random()
+        if (roll < baseProb) {
+          member.lastVote = 'yes'
+          yesVotes += member.sharePercent
+        } else if (roll < baseProb + 0.15) {
+          member.lastVote = 'abstain'
+        } else {
+          member.lastVote = 'no'
+        }
+      })
+
+      // Majorité relative des parts votantes (simplifié : % de parts favorables > % défavorables)
+      const approved = yesVotes > (totalShares * 0.5)
+
+      if (approved) {
+        // Appliquer impacts
+        if (decision.impacts.cash) this.company.cash += decision.impacts.cash
+        if (decision.impacts.marketShare) {
+          const take = decision.impacts.marketShare / this.competitors.length
+          this.competitors.forEach(c => c.marketShare = Math.max(1, c.marketShare - take))
+        }
+        if (decision.impacts.motivation) {
+          this.employees.forEach(e => e.motivation = Math.min(100, Math.max(0, e.motivation + (decision.impacts.motivation || 0))))
+        }
+        this.boardMembers.forEach(m => m.satisfaction = Math.min(100, m.satisfaction + 3))
+      } else {
+        this.boardMembers.forEach(m => m.satisfaction = Math.max(0, m.satisfaction - 5))
+      }
+
+      return approved
+    },
+
+    /** Annuler/Supprimer un projet */
+    cancelProject(projectId: string) {
+      const idx = this.activeProjects.findIndex(p => p.id === projectId)
+      if (idx !== -1) {
+        this.activeProjects.splice(idx, 1)
+        return true
+      }
+      return false
     },
 
     /** Mettre à jour le cours de l'action (basé sur la performance) */
     updateSharePrice() {
-      const baseValue = 25000
-      const performanceFactor = Math.max(0.5, 1 + (this.company.cash / 500000))
-      const growthFactor = 0.5 + (this.market.satisfaction / 100)
+      const baseValue = 10000
+      const cashFactor = 1 + (this.company.cash / 1000000)
+      const scoreFactor = this.company.generalScore / 100
+      const marketFactor = 0.5 + (this.market.satisfaction / 100)
+      const internalFactor = 0.5 + (this.productivity / 1)
 
-      this.company.sharePrice = Math.round(baseValue * performanceFactor * growthFactor)
+      this.company.sharePrice = Math.round(baseValue * cashFactor * scoreFactor * marketFactor * internalFactor)
+
+      // Ajout de micro-volatilité (jitter)
+      const jitter = 1 + (Math.random() - 0.5) * 0.04
+      this.company.sharePrice = Math.round(this.company.sharePrice * jitter)
+
       this.company.sharePriceHistory.push(this.company.sharePrice)
       if (this.company.sharePriceHistory.length > 24) this.company.sharePriceHistory.shift()
     },
@@ -1319,16 +1412,57 @@ export const useCompanyStore = defineStore('company', {
     /** Gérer les appels d'offres (expiration et apparition) */
     manageProjectTenders() {
       const now = Date.now()
-      // Nettoyage des projets expirés
+      // Nettoyage des projets expirés (uniquement si pas encore commencés/assignés)
       this.activeProjects = this.activeProjects.filter(p => {
-        if (p.status === 'pending' && p.expiresAt && p.expiresAt < now) return false
+        if (p.status === 'pending' && p.assignedEmployees.length === 0 && p.expiresAt && p.expiresAt < now) return false
         return true
       })
 
-      // Chance d'apparition d'un nouveau projet (si moins de 3 en attente)
-      const pendingCount = this.activeProjects.filter(p => p.status === 'pending').length
-      if (pendingCount < 3 && Math.random() < 0.1) {
+      // Chance d'apparition d'un nouveau projet (si moins de 5 tenders/backlog)
+      const backlogCount = this.activeProjects.filter(p => p.status === 'pending' && p.assignedEmployees.length === 0).length
+      if (backlogCount < 5 && Math.random() < 0.1) {
         this.generateProject()
+      }
+    },
+
+    /** Démarrer la production d'un projet */
+    startProject(projectId: string) {
+      const project = this.activeProjects.find(p => p.id === projectId)
+      if (project && project.assignedEmployees.length === project.teamSize) {
+        // Prélèvement des frais de dossier/lancement
+        if (this.company.cash >= project.cost) {
+          this.company.cash -= project.cost
+          project.status = 'active'
+          this.market.lastActionTime = Date.now()
+
+          useGameStore().triggerEvent({
+            id: 888,
+            name: "Lancement de Projet",
+            description: `Le projet ${project.title} est officiellement lancé. Frais de dossier déduits : ${project.cost} FCFA.`,
+            type: "loss",
+            impactValue: project.cost,
+            icon: "🚀",
+            probability: 1
+          })
+        } else {
+          useGameStore().triggerEvent({
+            id: 889,
+            name: "Fonds Insuffisants",
+            description: `Impossible de lancer ${project.title}. Il vous faut ${project.cost} FCFA pour les frais de dossier.`,
+            type: "loss",
+            impactValue: 0,
+            icon: "🚫",
+            probability: 1
+          })
+        }
+      }
+    },
+
+    /** Mettre en pause la production d'un projet */
+    stopProject(projectId: string) {
+      const project = this.activeProjects.find(p => p.id === projectId)
+      if (project && project.status === 'active') {
+        project.status = 'pending'
       }
     },
 
@@ -1379,6 +1513,32 @@ export const useCompanyStore = defineStore('company', {
             type: 'gain',
             impactValue: 10000,
             icon: '🎁'
+          })
+        }
+
+        // --- Volonté d'échange spontanée (v9.1) ---
+        // S'il est riche et content, il veut acheter (offre de vente pour le CEO)
+        if (member.satisfaction > 70 && member.sharePercent < 25 && Math.random() < 0.005) {
+          useGameStore().triggerEvent({
+            id: 400 + member.id,
+            name: `Offre d'Acquisition`,
+            description: `${member.name} souhaite vous racheter 1% de parts au prix fort.`,
+            type: 'gain',
+            impactValue: this.company.sharePrice * 1.1,
+            icon: '💰',
+            probability: 1
+          })
+        }
+        // S'il est déçu, il veut vendre (offre d'achat pour le CEO)
+        if (member.satisfaction < 40 && member.sharePercent > 5 && Math.random() < 0.005) {
+          useGameStore().triggerEvent({
+            id: 500 + member.id,
+            name: `Avis de Cession`,
+            description: `${member.name} cherche à liquider une partie de ses parts. Prix réduit (-10%).`,
+            type: 'loss',
+            impactValue: this.company.sharePrice * 0.9,
+            icon: '📉',
+            probability: 1
           })
         }
       })

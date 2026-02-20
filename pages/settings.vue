@@ -21,12 +21,22 @@ const form = reactive({
   }
 })
 
+const avatars = [
+  { id: 'casual-1', label: 'Casual Boy', icon: '👦' },
+  { id: 'casual-2', label: 'Casual Girl', icon: '👧' },
+  { id: 'suit-1', label: 'Alpha CEO', icon: '👔' },
+  { id: 'suit-2', label: 'Madame DG', icon: '👩‍💼' },
+  { id: 'cyber', label: 'Coder', icon: '👨‍💻' },
+]
+
 function saveSettings() {
   if (!companyStore.company.ceo) return
 
   companyStore.company.name = form.companyName
   companyStore.company.ceo.firstName = form.ceo.firstName
   companyStore.company.ceo.lastName = form.ceo.lastName
+  companyStore.company.ceo.gender = form.ceo.gender as any
+  companyStore.company.ceo.appearance = form.ceo.appearance
 
   // Mettre à jour localStorage
   localStorage.setItem('bizdom_save_v1', JSON.stringify({
@@ -63,30 +73,65 @@ useHead({
       </p>
     </header>
 
-    <div class="card p-8 sm:p-10 border rounded-[2.5rem] shadow-xl space-y-10"
+    <div class="card p-8 sm:p-10 border rounded-[2.5rem] shadow-xl space-y-8"
       :class="gameStore.darkMode ? 'bg-dark-900 border-white/5' : 'bg-white border-slate-200 shadow-sm'">
 
-      <div class="space-y-2">
-        <label class="block text-[10px] font-black uppercase tracking-widest text-dark-500">Nom de l'Empire</label>
+      <!-- Organisation -->
+      <div class="space-y-4">
+        <label class="block text-[10px] font-black uppercase tracking-widest text-accent-500 italic">🏢
+          Organisation</label>
         <input v-model="form.companyName" type="text" class="input-minimal" placeholder="Ex: CyberDyne Systems" />
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <div class="space-y-2">
-          <label class="block text-[10px] font-black uppercase tracking-widest text-dark-500">Prénom du
-            Dirigeant</label>
-          <input v-model="form.ceo.firstName" type="text" class="input-minimal" />
+      <!-- Identité CEO -->
+      <div class="space-y-6">
+        <label class="block text-[10px] font-black uppercase tracking-widest text-accent-500 italic">👤 Identité du
+          Dirigeant</label>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <label class="block text-[10px] font-black uppercase tracking-widest text-dark-500">Prénom</label>
+            <input v-model="form.ceo.firstName" type="text" class="input-minimal" />
+          </div>
+          <div class="space-y-2">
+            <label class="block text-[10px] font-black uppercase tracking-widest text-dark-500">Nom</label>
+            <input v-model="form.ceo.lastName" type="text" class="input-minimal" />
+          </div>
         </div>
-        <div class="space-y-2">
-          <label class="block text-[10px] font-black uppercase tracking-widest text-dark-500">Nom du Dirigeant</label>
-          <input v-model="form.ceo.lastName" type="text" class="input-minimal" />
+
+        <div class="space-y-4">
+          <label class="block text-[10px] font-black uppercase tracking-widest text-dark-500">Sexe</label>
+          <div class="flex flex-wrap gap-2">
+            <button v-for="g in ['M', 'F', 'NB']" :key="g" @click="form.ceo.gender = (g as any)" :class="[
+              'flex-1 py-3 rounded-xl font-black italic border-2 transition-all text-xs',
+              form.ceo.gender === g
+                ? 'bg-accent-600 border-accent-500 text-white shadow-glow-accent'
+                : gameStore.darkMode ? 'bg-dark-850 border-dark-700 text-dark-400' : 'bg-slate-50 border-slate-100 text-slate-400'
+            ]">
+              {{ g }}
+            </button>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <label class="block text-[10px] font-black uppercase tracking-widest text-dark-500">Apparence</label>
+          <div class="flex flex-wrap gap-2 justify-between">
+            <button v-for="av in avatars" :key="av.id" @click="form.ceo.appearance = av.id" :class="[
+              'w-12 h-12 flex items-center justify-center text-2xl rounded-xl border-2 transition-all duration-300',
+              form.ceo.appearance === av.id
+                ? 'bg-accent-600 border-accent-500 scale-110 shadow-glow-accent text-white'
+                : gameStore.darkMode ? 'bg-dark-850 border-dark-700 opacity-50' : 'bg-slate-50 border-slate-100 opacity-50'
+            ]">
+              {{ av.icon }}
+            </button>
+          </div>
         </div>
       </div>
 
-      <div class="pt-8 border-t" :class="gameStore.darkMode ? 'border-white/5' : 'border-slate-100'">
+      <div class="pt-6">
         <button @click="saveSettings"
-          class="w-full btn-primary py-5 rounded-[1.5rem] font-black italic text-xs uppercase tracking-[0.2em] shadow-glow-accent/20">
-          Enregistrer les Rectifications
+          class="w-full btn-primary py-5 rounded-2xl font-black italic text-xs uppercase tracking-[0.2em] shadow-glow-accent/20">
+          Valider les Rectifications ✓
         </button>
       </div>
     </div>

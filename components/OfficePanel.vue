@@ -118,15 +118,22 @@ const capacityColor = computed(() => {
               </p>
             </div>
           </div>
-          <button
-            class="px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-20 disabled:grayscale"
-            :disabled="gameStore.isPaused" :class="[
-              office.id > companyStore.company.currentOfficeId
-                ? 'bg-accent-500/10 text-accent-500 hover:bg-accent-500 hover:text-white border border-accent-500/20 shadow-glow-accent'
-                : 'bg-dark-800 text-dark-400 hover:bg-dark-700'
-            ]" @click="companyStore.upgradeOffice(office.id)">
-            {{ office.id > companyStore.company.currentOfficeId ? '⬆ Upgrade' : '⬇ Down' }}
-          </button>
+          <div class="flex flex-col items-end gap-2">
+            <button
+              class="px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-20 disabled:grayscale"
+              :disabled="gameStore.isPaused || (office.id > companyStore.company.currentOfficeId && companyStore.company.level < office.minBusinessLevel)"
+              :class="[
+                office.id > companyStore.company.currentOfficeId
+                  ? 'bg-accent-500/10 text-accent-500 hover:bg-accent-500 hover:text-white border border-accent-500/20 shadow-glow-accent'
+                  : 'bg-dark-800 text-dark-400 hover:bg-dark-700'
+              ]" @click="companyStore.upgradeOffice(office.id)">
+              {{ office.id > companyStore.company.currentOfficeId ? '⬆ Upgrade' : '⬇ Down' }}
+            </button>
+            <p v-if="office.id > companyStore.company.currentOfficeId && companyStore.company.level < office.minBusinessLevel"
+              class="text-[7px] font-black text-loss-500 uppercase tracking-tighter text-right leading-tight max-w-[100px]">
+              Niveau {{ office.minBusinessLevel }} requis. Terminez des projets !
+            </p>
+          </div>
         </div>
       </div>
     </div>

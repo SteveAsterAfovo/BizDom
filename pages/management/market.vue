@@ -94,14 +94,14 @@ useHead({
           </div>
 
           <div class="pt-6 border-t space-y-4" :class="gameStore.darkMode ? 'border-white/5' : 'border-slate-100'">
-            <div
-              class="flex items-center justify-between text-[9px] font-black uppercase tracking-widest text-dark-500">
-              <span>Reputation</span>
-              <span class="text-gain-500">92/100</span>
+            <div class="text-right">
+              <p class="text-[9px] text-dark-500 font-black uppercase tracking-widest mb-2 leading-none">Reputation</p>
+              <span class="text-gain-500 text-sm font-black italic">{{ companyStore.satisfactionScore }}/100</span>
             </div>
-            <div class="w-full h-1.5 bg-dark-700/20 rounded-full overflow-hidden">
-              <div class="h-full bg-gain-500 shadow-glow-gain" style="width: 92%"></div>
-            </div>
+          </div>
+          <div class="w-full h-1.5 bg-dark-700/20 rounded-full overflow-hidden">
+            <div class="h-full bg-gain-500 shadow-glow-gain transition-all duration-500"
+              :style="{ width: `${companyStore.satisfactionScore}%` }"></div>
           </div>
         </div>
       </div>

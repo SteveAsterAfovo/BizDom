@@ -67,6 +67,42 @@ useHead({
         :subtitle="`Churn : ${(companyStore.market.churnRate * 100).toFixed(1)}%`" />
     </div>
 
+    <!-- ── Projets Actifs ── -->
+    <div v-if="companyStore.activeProjects.filter(p => p.status === 'active').length > 0" class="mb-10">
+      <div class="flex items-center justify-between mb-6">
+        <h3 class="font-black italic uppercase tracking-tighter text-xl"
+          :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">
+          🚀 Projets en production ({{companyStore.activeProjects.filter(p => p.status === 'active').length}})
+        </h3>
+        <NuxtLink to="/management/projects"
+          class="text-[10px] font-black uppercase text-accent-500 hover:text-accent-400">
+          Gérer la production →
+        </NuxtLink>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div v-for="project in companyStore.activeProjects.filter(p => p.status === 'active')" :key="project.id"
+          class="card p-5 border rounded-[2rem] shadow-lg animate-fade-in"
+          :class="gameStore.darkMode ? 'bg-dark-950/50 border-white/5 shadow-glow-accent/5' : 'bg-white border-slate-100 shadow-sm'">
+          <div class="flex justify-between items-start mb-4">
+            <h4 class="text-sm font-black italic uppercase tracking-tight truncate pr-4"
+              :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">{{ project.title }}</h4>
+            <span
+              class="text-[8px] font-black bg-accent-500 text-white px-2 py-0.5 rounded-full animate-pulse">LIVE</span>
+          </div>
+          <div class="space-y-3">
+            <div class="progress-bar h-1.5 bg-dark-800 rounded-full overflow-hidden">
+              <div class="progress-fill h-full bg-accent-500 shadow-glow-accent transition-all duration-1000"
+                :style="{ width: project.progress + '%' }" />
+            </div>
+            <div class="flex justify-between text-[9px] font-bold uppercase tracking-widest text-dark-500">
+              <span>Progression</span>
+              <span>{{ Math.round(project.progress) }}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ── Graphiques ── -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
       <LineChart title="📈 Évolution de la trésorerie" :labels="gameStore.monthLabels" :datasets="[
