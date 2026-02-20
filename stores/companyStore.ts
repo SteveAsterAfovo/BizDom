@@ -1049,6 +1049,16 @@ export const useCompanyStore = defineStore('company', {
       const titles = ['Refonte CRM 2.0', 'Module IA Prédictive', 'SaaS E-commerce', 'App Mobile Livreur', 'Smart Contract Tool']
       const idx = Math.floor(Math.random() * ids.length)
 
+      // Calculer les spécialités requises d'abord
+      const requiredSpecialties: Partial<Record<EmployeeSpecialty, number>> = {
+        tech: 2 + Math.floor(Math.random() * 2),
+        creative: Math.random() > 0.5 ? 1 : 0,
+        management: 1
+      }
+
+      // teamSize = somme des spécialités (toujours cohérent avec les badges)
+      const teamSize = Object.values(requiredSpecialties).reduce((sum, v) => sum + (v || 0), 0)
+
       const newProject: Project = {
         id: `${ids[idx]}-${Date.now()}`,
         title: titles[idx],
@@ -1057,13 +1067,9 @@ export const useCompanyStore = defineStore('company', {
         progress: 0,
         cost: 10000 + Math.floor(Math.random() * 20000),
         budget: 5000 + Math.floor(Math.random() * 10000),
-        teamSize: 3 + Math.floor(Math.random() * 4),
+        teamSize,
         requiredSkills: { tech: 2, sales: 0, creative: 0, hr: 0, management: 1 },
-        requiredSpecialties: {
-          tech: 2 + Math.floor(Math.random() * 2),
-          creative: Math.random() > 0.5 ? 1 : 0,
-          management: 1
-        },
+        requiredSpecialties,
         reward: 150000 + Math.floor(Math.random() * 200000),
         penalty: 50000,
         status: 'pending',

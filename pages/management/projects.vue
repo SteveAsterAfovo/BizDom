@@ -56,45 +56,63 @@ onMounted(() => {
   }
 })
 
-function getTimeLeft(expiresAt?: number) {
-  if (!expiresAt) return ''
-  const diff = expiresAt - gameStore.now
-  if (diff <= 0) return 'Expiré'
+/**
+ * Computed réactif : map de timers par projet
+ * Se met à jour automatiquement à chaque tick (gameStore.now change chaque seconde)
+ */
+const projectTimers = computed(() => {
+  // Force la réactivité en lisant gameStore.now
+  const now = gameStore.now
+  const timers: Record<string, { timeLeft: string; remainingDays: string; isUrgent: boolean }> = {}
 
-  // diff est en ms réel — convertir en m/s pour affichage
-  const totalSeconds = Math.floor(diff / 1000)
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
+  companyStore.activeProjects.forEach((project: Project) => {
+    // ── Temps avant expiration (appels d'offres pending) ──
+    let timeLeft = ''
+    let isUrgent = false
+    if (project.expiresAt) {
+      const diff = project.expiresAt - now
+      if (diff <= 0) {
+        timeLeft = 'Expiré'
+        isUrgent = true
+      } else {
+        const totalSeconds = Math.floor(diff / 1000)
+        const minutes = Math.floor(totalSeconds / 60)
+        const seconds = totalSeconds % 60
+        timeLeft = minutes > 0 ? `${minutes}m ${String(seconds).padStart(2, '0')}s` : `${seconds}s`
+        isUrgent = totalSeconds < 60
+      }
+    }
 
-  if (minutes > 0) return `${minutes}m ${seconds}s`
-  return `${seconds}s`
-}
+    // ── Durée restante (projets actifs en production) ──
+    let remainingDays = `${project.duration} Jours`
+    if (project.status === 'active') {
+      const efficiency = getProjectEfficiency(project) / 100 || 1
+      const remainingPercent = 100 - project.progress
+      // 1 jour-jeu = 120 secondes réelles
+      const totalSecondsRemaining = ((remainingPercent / 100) * (project.duration * 120)) / efficiency
 
-function getRemainingDays(project: Project) {
-  if (project.status !== 'active') return `${project.duration} Jours`
+      const hours = Math.floor(totalSecondsRemaining / 3600)
+      const minutes = Math.floor((totalSecondsRemaining % 3600) / 60)
+      const seconds = Math.floor(totalSecondsRemaining % 60)
 
-  const efficiency = getProjectEfficiency(project) / 100 || 1
-  const remainingPercent = 100 - project.progress
+      if (hours > 0) {
+        remainingDays = `${hours}h ${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`
+      } else if (minutes > 0) {
+        remainingDays = `${minutes}m ${String(seconds).padStart(2, '0')}s`
+      } else {
+        remainingDays = `${seconds}s`
+      }
+    }
 
-  // 1 mois = 3600s, donc 1 jour = 120s (SECONDS_PER_GAME_DAY)
-  // Durée totale en secondes réelles = project.duration * 120
-  // Progression restante = 100 - project.progress
-  // Temps restant théorique = (remainingPercent/100) * (project.duration * 120)
-  // Temps réel (ajusté par efficacité) = Temps théorique / efficiency
+    timers[project.id] = { timeLeft, remainingDays, isUrgent }
+  })
 
-  const totalSecondsRemaining = ((remainingPercent / 100) * (project.duration * 120)) / efficiency
+  return timers
+})
 
-  const hours = Math.floor(totalSecondsRemaining / 3600)
-  const minutes = Math.floor((totalSecondsRemaining % 3600) / 60)
-  const seconds = Math.floor(totalSecondsRemaining % 60)
-
-  if (hours > 0) {
-    return `${hours}h ${minutes}m ${seconds}s`
-  }
-  if (minutes > 0) {
-    return `${minutes}m ${seconds}s`
-  }
-  return `${seconds}s`
+/** Calcul du total des spécialités requises pour un projet */
+function getRequiredTotal(project: Project): number {
+  return Object.values(project.requiredSpecialties).reduce((sum, v) => sum + (v || 0), 0)
 }
 
 // SEO
@@ -153,33 +171,46 @@ useHead({
 
           <!-- Time Left for Pending Projects -->
           <div v-if="project.status === 'pending' && project.expiresAt" class="mb-4">
-            <div class="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-loss-500">
-              <span class="animate-pulse">⌛</span> Expire dans : {{ getTimeLeft(project.expiresAt) }}
+            <div
+              class="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest transition-colors duration-500"
+              :class="projectTimers[project.id]?.isUrgent ? 'text-loss-500 animate-pulse' : 'text-warn-500'">
+              <span class="text-base">⏱</span>
+              <span>Expire dans :</span>
+              <span class="font-mono tabular-nums text-[11px] tracking-tight"
+                :class="projectTimers[project.id]?.isUrgent ? 'text-loss-400' : 'text-warn-400'">
+                {{ projectTimers[project.id]?.timeLeft }}
+              </span>
             </div>
           </div>
 
           <p class="text-sm font-bold leading-relaxed mb-8"
             :class="gameStore.darkMode ? 'text-dark-400' : 'text-slate-500'">{{ project.description }}</p>
 
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
             <div class="p-4 rounded-2xl border"
               :class="gameStore.darkMode ? 'bg-dark-850 border-white/5' : 'bg-slate-50 border-slate-100'">
               <p class="text-[8px] font-black uppercase tracking-widest text-dark-500 mb-1">Gain Estimé</p>
               <p class="text-sm font-black italic text-gain-500">{{ formatCurrency(project.reward) }}</p>
+            </div>
+            <div class="p-4 rounded-2xl border"
+              :class="gameStore.darkMode ? 'bg-dark-850 border-white/5' : 'bg-slate-50 border-slate-100'">
+              <p class="text-[8px] font-black uppercase tracking-widest text-dark-500 mb-1">Coût</p>
+              <p class="text-sm font-black italic text-loss-500">{{ formatCurrency(project.cost) }}</p>
             </div>
             <div class="p-4 rounded-2xl border transition-all"
               :class="project.status === 'active' ? (gameStore.darkMode ? 'bg-accent-500/5 border-accent-500/20' : 'bg-accent-50 border-accent-100') : (gameStore.darkMode ? 'bg-dark-850 border-white/5' : 'bg-slate-50 border-slate-100')">
               <p class="text-[8px] font-black uppercase tracking-widest text-dark-500 mb-1">
                 {{ project.status === 'active' ? 'Restant' : 'Délai' }}
               </p>
-              <p class="text-sm font-black italic" :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">
-                {{ getRemainingDays(project) }}
+              <p class="text-sm font-black italic font-mono tabular-nums"
+                :class="gameStore.darkMode ? 'text-white' : 'text-slate-900'">
+                {{ projectTimers[project.id]?.remainingDays }}
               </p>
             </div>
             <div class="p-4 rounded-2xl border"
               :class="gameStore.darkMode ? 'bg-dark-850 border-white/5' : 'bg-slate-50 border-slate-100'">
               <p class="text-[8px] font-black uppercase tracking-widest text-dark-500 mb-1">Équipe</p>
-              <p class="text-sm font-black italic text-accent-500">{{ project.teamSize }} Membres</p>
+              <p class="text-sm font-black italic text-accent-500">{{ getRequiredTotal(project) }} Membres</p>
             </div>
           </div>
 
