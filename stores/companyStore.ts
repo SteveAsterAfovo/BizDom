@@ -501,6 +501,17 @@ export const useCompanyStore = defineStore('company', {
     addPerk(perkId: number) {
       if (!this.company.activePerks.includes(perkId)) {
         this.company.activePerks.push(perkId)
+
+        // Impact immédiat sur la motivation et la fatigue
+        const perk = this.availablePerks.find(p => p.id === perkId)
+        if (perk) {
+          const boost = perk.motivationBoost
+          const reduction = perk.fatigueReduction
+          this.employees.forEach(e => {
+            e.motivation = Math.min(100, e.motivation + boost)
+            e.fatigue = Math.max(0, e.fatigue - reduction)
+          })
+        }
       }
     },
 
@@ -509,6 +520,17 @@ export const useCompanyStore = defineStore('company', {
       const idx = this.company.activePerks.indexOf(perkId)
       if (idx !== -1) {
         this.company.activePerks.splice(idx, 1)
+
+        // Malus de motivation (déception) et retour de la fatigue lors du retrait
+        const perk = this.availablePerks.find(p => p.id === perkId)
+        if (perk) {
+          const penalty = Math.ceil(perk.motivationBoost * 1.5)
+          const fatigueReturn = perk.fatigueReduction
+          this.employees.forEach(e => {
+            e.motivation = Math.max(0, e.motivation - penalty)
+            e.fatigue = Math.min(100, e.fatigue + fatigueReturn)
+          })
+        }
       }
     },
 
@@ -1043,39 +1065,55 @@ export const useCompanyStore = defineStore('company', {
 
     // ─── PROJETS & PRODUCTION ───
 
-    /** Générer un nouveau projet aléatoire */
+    /** Générer un nouveau projet aléatoire avec difficulté progressive */
     generateProject() {
+      const level = this.company.level || 1
       const ids = ['p-crm', 'p-ai', 'p-saas', 'p-mobile', 'p-blockchain']
       const titles = ['Refonte CRM 2.0', 'Module IA Prédictive', 'SaaS E-commerce', 'App Mobile Livreur', 'Smart Contract Tool']
       const idx = Math.floor(Math.random() * ids.length)
 
-      // Calculer les spécialités requises d'abord
+      // Facteur de difficulté basé sur le niveau (1.0 au niveau 1)
+      const diffMultiplier = 0.5 + (level * 0.5)
+
+      // Calculer les spécialités requises - Difficulté progressive
+      // Niveau 1 : 1-2 tech, 0 creative, 1 management = 2-3 membres
+      // Les niveaux supérieurs ajoutent des besoins
+      const techNeeded = Math.max(1, Math.floor((1 + Math.random()) * diffMultiplier))
+      const creativeNeeded = level > 2 ? (Math.random() > 0.5 ? 1 : 0) : 0
+      const managementNeeded = 1
+
       const requiredSpecialties: Partial<Record<EmployeeSpecialty, number>> = {
-        tech: 2 + Math.floor(Math.random() * 2),
-        creative: Math.random() > 0.5 ? 1 : 0,
-        management: 1
+        tech: techNeeded,
+        creative: creativeNeeded,
+        management: managementNeeded
       }
 
-      // teamSize = somme des spécialités (toujours cohérent avec les badges)
+      // teamSize = somme des spécialités
       const teamSize = Object.values(requiredSpecialties).reduce((sum, v) => sum + (v || 0), 0)
+
+      // Gains et coûts scalent aussi
+      const baseReward = 50000 + Math.floor(Math.random() * 50000)
+      const reward = Math.round(baseReward * diffMultiplier)
+      const cost = Math.round((1000 * teamSize) * diffMultiplier)
+      const budget = Math.round(cost * 0.5)
 
       const newProject: Project = {
         id: `${ids[idx]}-${Date.now()}`,
         title: titles[idx],
-        description: "Un projet stratégique pour augmenter nos revenus. Attention aux délais !",
-        duration: 20 + Math.floor(Math.random() * 30),
+        description: "Un projet stratégique adapté à notre envergure actuelle.",
+        duration: Math.round((15 + Math.floor(Math.random() * 15)) * diffMultiplier),
         progress: 0,
-        cost: 10000 + Math.floor(Math.random() * 20000),
-        budget: 5000 + Math.floor(Math.random() * 10000),
+        cost,
+        budget,
         teamSize,
         requiredSkills: { tech: 2, sales: 0, creative: 0, hr: 0, management: 1 },
         requiredSpecialties,
-        reward: 150000 + Math.floor(Math.random() * 200000),
-        penalty: 50000,
+        reward,
+        penalty: Math.round(reward * 0.3),
         status: 'pending',
-        shareholderOpinion: 8,
+        shareholderOpinion: 5 + (level * 2),
         assignedEmployees: [],
-        expiresAt: Date.now() + (Math.floor(Math.random() * 3) + 2) * 120 * 1000 // 2 à 5 jours-jeu (1 jour = 120s)
+        expiresAt: Date.now() + (Math.floor(Math.random() * 3) + 3) * 120 * 1000 // 3 à 6 jours-jeu
       }
 
       this.activeProjects.push(newProject)
