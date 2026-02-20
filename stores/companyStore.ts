@@ -682,7 +682,7 @@ export const useCompanyStore = defineStore('company', {
       this.activeProjects.forEach((project: Project, idx) => {
         // Expiration des appels d'offres (pending sans équipe assignée)
         if (project.status === 'pending' && project.assignedEmployees.length === 0 && project.expiresAt) {
-          if (Date.now() > project.expiresAt) {
+          if (useGameStore().now > project.expiresAt) {
             // Supprimer le projet expiré
             this.activeProjects.splice(idx, 1)
             return
@@ -1069,7 +1069,7 @@ export const useCompanyStore = defineStore('company', {
         status: 'pending',
         shareholderOpinion: 8,
         assignedEmployees: [],
-        expiresAt: Date.now() + (Math.floor(Math.random() * 3) + 2) * 24 * 60 * 60 * 1000 // 2 à 5 jours
+        expiresAt: Date.now() + (Math.floor(Math.random() * 3) + 2) * 120 * 1000 // 2 à 5 jours-jeu (1 jour = 120s)
       }
 
       this.activeProjects.push(newProject)
@@ -1411,7 +1411,7 @@ export const useCompanyStore = defineStore('company', {
 
     /** Gérer les appels d'offres (expiration et apparition) */
     manageProjectTenders() {
-      const now = Date.now()
+      const now = useGameStore().now
       // Nettoyage des projets expirés (uniquement si pas encore commencés/assignés)
       this.activeProjects = this.activeProjects.filter(p => {
         if (p.status === 'pending' && p.assignedEmployees.length === 0 && p.expiresAt && p.expiresAt < now) return false

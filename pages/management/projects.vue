@@ -61,13 +61,13 @@ function getTimeLeft(expiresAt?: number) {
   const diff = expiresAt - gameStore.now
   if (diff <= 0) return 'Expiré'
 
-  const days = Math.floor(diff / (24 * 60 * 60 * 1000))
-  const hours = Math.floor((diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000))
+  // diff est en ms réel — convertir en m/s pour affichage
+  const totalSeconds = Math.floor(diff / 1000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
 
-  if (days > 0) return `${days}j ${hours}h`
-  const minutes = Math.floor((diff % (60 * 60 * 1000)) / (60 * 1000))
-  const seconds = Math.floor((diff % (60 * 1000)) / 1000)
-  return `${hours}h ${minutes}m ${seconds}s`
+  if (minutes > 0) return `${minutes}m ${seconds}s`
+  return `${seconds}s`
 }
 
 function getRemainingDays(project: Project) {
